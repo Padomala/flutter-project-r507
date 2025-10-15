@@ -1,20 +1,28 @@
 import 'package:flutter/material.dart';
+import 'pages/home_page.dart';
+// import 'pages/party_page.dart';
+import 'pages/settings_page.dart';
 
 void main() {
-  runApp(const MainApp());
+  runApp(MyApp());
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
-
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
+    return MaterialApp(
+      title: 'Flutter Project',
+      theme: ThemeData(
+        primarySwatch: Colors.teal,
+        scaffoldBackgroundColor: Colors.white,
       ),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => HomePage(),
+        // '/create_party': (context) => CreatePartyPage(),
+        // '/join_party': (context) => JoinPartyPage(),
+        '/settings': (context) => SettingsPage(),
+      },
     );
   }
 }
