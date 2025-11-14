@@ -2,13 +2,28 @@ import 'package:flutter/material.dart';
 import 'pages/home_page.dart';
 // import 'pages/party_page.dart';
 import 'pages/settings_page.dart';
+import 'package:provider/provider.dart';
+import 'provider/appProvider.dart';
+import './provider/provider/userProvider.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProxyProvider<UserProvider, AppProvider>(
+          create: (_) => AppProvider(userProvider: null),
+          update: (_, userProvider, previous) =>
+              AppProvider(userProvider: userProvider),
+        ),
+      ],
+      child: MyApp(),
+    ),
+  );
 }
 
-class MyApp extends StatelessWidget {
 
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
