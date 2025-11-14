@@ -20,6 +20,11 @@ class AtomButton extends StatelessWidget {
         backgroundColor: color,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(
+            color: Colors.white,
+            width:
+                4, // ← épaisseur du contour, mets 5 si tu veux un truc bien bourrin
+          ),
         ),
         padding: EdgeInsets.symmetric(horizontal: 28, vertical: 20),
         elevation: 6,

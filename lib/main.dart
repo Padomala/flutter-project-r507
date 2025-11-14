@@ -31,6 +31,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.teal,
         scaffoldBackgroundColor: Colors.white,
+        fontFamily: 'Motley_Forces',
       ),
       initialRoute: '/',
       routes: {
