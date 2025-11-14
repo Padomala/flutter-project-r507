@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widget/atom_button.dart';
 import '../widget/atom_title.dart';
 import '../widget/molcule_card.dart';
+import '../widget/bottom_nav_bar.dart';
 
 class HomePage extends StatelessWidget {
   @override
@@ -13,10 +14,7 @@ class HomePage extends StatelessWidget {
         children: [
           // Image d'arrière-plan associée à la maquette
           Positioned.fill(
-            child: Image.asset(
-              'assets/HOME.jpg',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/HOME.jpg', fit: BoxFit.cover),
           ),
           // Dégradé sombre pour lisibilité
           Positioned.fill(
@@ -33,7 +31,10 @@ class HomePage extends StatelessWidget {
           // Contenu
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 28.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 28.0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -71,42 +72,7 @@ class HomePage extends StatelessWidget {
             ),
           ),
           // Boutons de navigation inférieurs (barre fixe)
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      // Exemple: ouvrir les infos ou le profil
-                      Navigator.pushNamed(context, '/settings');
-                    },
-                    icon: Icon(Icons.person, color: Colors.white, size: 28),
-                    tooltip: 'Profil',
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      // Accès page principale (home)
-                    },
-                    icon: Icon(Icons.home, color: Colors.white, size: 28),
-                    tooltip: 'Accueil',
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      // Ouvrir le magasin/équipe, en l’occurrence placeholder
-                      Navigator.pushNamed(context, '/settings');
-                    },
-                    icon: Icon(Icons.store, color: Colors.white, size: 28),
-                    tooltip: 'Magasin',
-                  ),
-                ],
-              ),
-            ),
-          ),
+          const BottomNavBar(),
         ],
       ),
     );
