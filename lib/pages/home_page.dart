@@ -4,6 +4,7 @@ import '../widget/atom_title.dart';
 import '../widget/molcule_card.dart';
 
 class HomePage extends StatelessWidget {
+  
   @override
   Widget build(BuildContext context) {
     final double cardSpacing = 20.0;
