@@ -12,8 +12,8 @@ class MoleculeCard extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.bgColor = Colors.white,
-    this.width = 320,
-    this.height = 120,
+    this.width = 300,
+    this.height = 90,
   }) : super(key: key);
 
   @override
@@ -27,15 +27,19 @@ class MoleculeCard extends StatelessWidget {
           backgroundColor: bgColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(28),
+            side: const BorderSide(
+              color: Colors.white,
+              width: 12, // tu peux pousser à 5 si tu veux un contour plus fat
+            ),
           ),
           elevation: 8,
-          padding: EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
         ),
         child: Text(
           label,
           textAlign: TextAlign.center,
           style: const TextStyle(
-            fontSize: 20,
+            fontSize: 28,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),

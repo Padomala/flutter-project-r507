@@ -11,9 +11,8 @@ class AtomTitle extends StatelessWidget {
       text,
       textAlign: TextAlign.center,
       style: const TextStyle(
-        fontFamily: 'Montserrat',
         fontWeight: FontWeight.bold,
-        fontSize: 48,
+        fontSize: 64,
         color: Colors.white,
         shadows: [
           Shadow(color: Colors.black38, offset: Offset(2, 2), blurRadius: 4),
