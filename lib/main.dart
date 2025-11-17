@@ -12,19 +12,7 @@ import 'pages/create_party.dart';
 import 'pages/join_party.dart';
 
 void main() {
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => UserProvider()),
-        ChangeNotifierProxyProvider<UserProvider, AppProvider>(
-          create: (_) => AppProvider(userProvider: null),
-          update: (_, userProvider, previous) =>
-              AppProvider(userProvider: userProvider),
-        ),
-      ],
-      child: MyApp(),
-    ),
-  );
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {

@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../widget/atom_background_page.dart';
+import '../../widget/molecules/text_field.dart';
+import '../../app_colors.dart';
+import '../../widget/molcule_card.dart';
 
 class Register extends StatelessWidget {
   const Register({super.key});
@@ -11,16 +15,9 @@ class Register extends StatelessWidget {
       body: Stack(
         children: [
           // Image de fond
-          Container(
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(''), // Remplacez par votre image
-                fit: BoxFit.cover,
-              ),
-            ),
+          BackgroundPage(
+            pathBackground: '../../assets/images/voiture_rouge.png',
           ),
-          // Filtre semi-transparent
-          Container(color: Colors.black.withAlpha(3)),
           // Contenu principal
           Center(
             child: SingleChildScrollView(
@@ -29,7 +26,7 @@ class Register extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(horizontal: 20),
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.yellow[100],
+                  color: AppColors.yellow,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
@@ -54,125 +51,43 @@ class Register extends StatelessWidget {
                     const SizedBox(height: 20),
 
                     // Champ Username
-                    TextFormField(
-                      decoration: InputDecoration(
-                        labelText: 'Nom d\'utilisateur',
-                        prefixIcon: const Icon(Icons.person),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
+                    CustomTextField(
+                      label: "NOM D'UTILISATEUR",
+                      hintText: "Entrez votre nom d'utilisateur",
+                      icon: Icons.person,
+                      fieldType: EnumFieldType.text,
                     ),
-                    const SizedBox(height: 15),
 
                     // Champ Email
-                    TextFormField(
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        prefixIcon: const Icon(Icons.email),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                      keyboardType: TextInputType.emailAddress,
+                    CustomTextField(
+                      label: "EMAIL",
+                      hintText: "Entrez votre mail",
+                      icon: Icons.mail,
+                      fieldType: EnumFieldType.email,
                     ),
-                    const SizedBox(height: 15),
 
                     // Champ Mot de passe
-                    TextFormField(
-                      decoration: InputDecoration(
-                        labelText: 'Mot de passe',
-                        prefixIcon: const Icon(Icons.lock),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                      obscureText: true,
+                    CustomTextField(
+                      label: "MOT DE PASSE",
+                      hintText: "Entrez votre mot de passe",
+                      icon: Icons.password,
+                      fieldType: EnumFieldType.password,
                     ),
-                    const SizedBox(height: 15),
-
-                    // Champ Confirmer Mot de passe
-                    TextFormField(
-                      decoration: InputDecoration(
-                        labelText: 'Confirmer le mot de passe',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                      obscureText: true,
-                    ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 35),
 
                     // Bouton S'inscrire
                     SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
+                      child: MoleculeCard(
+                        label: 'S\'INSCRIRE',
                         onPressed: () {
-                          // Logique d'inscription ici
+                          Navigator.pushNamed(context, '/home_page');
                         },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue[800],
-                          padding: const EdgeInsets.symmetric(vertical: 15),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: const Text(
-                          'S\'inscrire',
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
+                        bgColor: AppColors.blue,
+                        width: 320,
+                        height: 100,
                       ),
                     ),
-                    const SizedBox(height: 20),
 
-                    // Séparateur "Ou se connecter avec"
-                    const Row(
-                      children: [
-                        Expanded(child: Divider()),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text(
-                            'Ou se connecter avec',
-                            style: TextStyle(
-                              color: Colors.black54,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                        Expanded(child: Divider()),
-                      ],
-                    ),
-                    const SizedBox(height: 15),
-
-                    // Bouton Google
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          // Logique de connexion avec Google
-                        },
-                        icon: const Icon(Icons.g_mobiledata, color: Colors.red),
-                        label: const Text(
-                          'Google',
-                          style: TextStyle(fontSize: 16, color: Colors.red),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                    ),
                     const SizedBox(height: 15),
 
                     // Lien vers la page de connexion
@@ -181,16 +96,16 @@ class Register extends StatelessWidget {
                       children: [
                         const Text(
                           'Déjà un compte ? ',
-                          style: TextStyle(color: Colors.black54),
+                          style: TextStyle(color: AppColors.textColor),
                         ),
                         TextButton(
                           onPressed: () {
-                            Navigator.pop(context);
+                            Navigator.pop(context, '/login');
                           },
                           child: const Text(
                             'Se connecter',
                             style: TextStyle(
-                              color: Colors.blue,
+                              color: AppColors.blue,
                               fontWeight: FontWeight.bold,
                             ),
                           ),

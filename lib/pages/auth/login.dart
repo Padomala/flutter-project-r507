@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../widget/molecules/text_field.dart';
+import '../../app_colors.dart';
+import '../../widget/molcule_card.dart';
+import '../../widget/atom_background_page.dart';
 
 class Login extends StatelessWidget {
   const Login({super.key});
@@ -13,14 +16,10 @@ class Login extends StatelessWidget {
       body: Stack(
         children: [
           // Image de fond
-          Container(
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(''), // Remplacez par votre image
-                fit: BoxFit.cover,
-              ),
-            ),
+          BackgroundPage(
+            pathBackground: '../../assets/images/voiture_rouge.png',
           ),
+
           // Filtre semi-transparent pour améliorer la lisibilité
           Container(color: Colors.black.withAlpha(3)),
           // Contenu principal
@@ -31,13 +30,14 @@ class Login extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(horizontal: 20),
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.yellow[200],
+                  color: AppColors.yellow,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withAlpha(2),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
+                      color: Colors.black.withAlpha(20),
+                      blurRadius: 12,
+                      spreadRadius: 1,
+                      offset: const Offset(0, 6),
                     ),
                   ],
                 ),
@@ -46,32 +46,18 @@ class Login extends StatelessWidget {
                   children: [
                     // Logo ou titre
                     const Text(
-                      'Connexion',
+                      'CONNEXION',
                       style: TextStyle(
-                        fontSize: 28,
+                        fontSize: 40,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: AppColors.textColor,
                       ),
                     ),
 
                     const SizedBox(height: 20),
-                    // // Champ email
-                    // TextFormField(
-                    //   decoration: InputDecoration(
-                    //     labelText: 'Email',
-                    //     prefixIcon: const Icon(Icons.email),
-                    //     border: OutlineInputBorder(
-                    //       borderRadius: BorderRadius.circular(10),
-                    //     ),
-                    //     filled: true,
-                    //     fillColor: Colors.white,
-                    //   ),
-                    //   keyboardType: TextInputType.emailAddress,
-                    // ),
-
                     // Champ Email
                     CustomTextField(
-                      label: "Email",
+                      label: "EMAIL",
                       hintText: "Entrez votre email",
                       icon: Icons.email,
                       fieldType: EnumFieldType.email,
@@ -79,7 +65,7 @@ class Login extends StatelessWidget {
                     const SizedBox(height: 15),
                     // Champ mot de passe
                     CustomTextField(
-                      label: "Password",
+                      label: "PASSWORD",
                       hintText: "Entrez votre mot de passe",
                       icon: Icons.password,
                       fieldType: EnumFieldType.password,
@@ -87,37 +73,59 @@ class Login extends StatelessWidget {
                     const SizedBox(height: 20),
                     // Bouton de connexion
                     SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
+                      child: MoleculeCard(
+                        label: 'SE CONNECTER',
                         onPressed: () {
-                          // Logique de connexion ici
+                          Navigator.pushNamed(context, '/home_page');
                         },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue[800],
-                          padding: const EdgeInsets.symmetric(vertical: 15),
+                        bgColor: AppColors.blue,
+                        width: 320,
+                        height: 100,
+                      ),
+                    ),
+
+                    // Séparateur "Ou se connecter avec"
+                    const Row(
+                      children: [
+                        Expanded(child: Divider()),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 10),
+                          child: Text(
+                            'Ou se connecter avec',
+                            style: TextStyle(
+                              color: Colors.black54,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                        Expanded(child: Divider()),
+                      ],
+                    ),
+
+                    // Bouton Google
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          // Logique de connexion avec Google
+                        },
+                        icon: const Icon(
+                          Icons.g_mobiledata,
+                          color: AppColors.red,
+                        ),
+                        label: const Text(
+                          'Google',
+                          style: TextStyle(fontSize: 16, color: AppColors.red),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        child: const Text(
-                          'Se connecter',
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
                       ),
                     ),
                     const SizedBox(height: 15),
-                    // Lien "Mot de passe oublié"
-                    TextButton(
-                      onPressed: () {
-                        // Logique pour mot de passe oublié
-                      },
-                      child: const Text('Mot de passe oublié ?'),
-                    ),
-                    // Bouton Retour
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Retour'),
-                    ),
                   ],
                 ),
               ),
