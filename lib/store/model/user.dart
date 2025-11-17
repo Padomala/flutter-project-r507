@@ -1,13 +1,11 @@
 import 'dart:convert';
 
 class UserModel {
-  // we create the variable
   final String id;
   final String name;
   final String email;
   final String? avatarUrl;
 
-  // we create the model UserModel (constructor)
   UserModel({
     required this.id,
     required this.name,
@@ -15,7 +13,6 @@ class UserModel {
     this.avatarUrl,
   });
 
-  // we create the data from the JSON (replace with fetch the data from the database)
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'] as String,
@@ -25,7 +22,6 @@ class UserModel {
     );
   }
 
-  // we have a toJson method to send the object list into a string form (useful to send data to a database)
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -35,8 +31,6 @@ class UserModel {
     };
   }
 
-
-  
   UserModel copyWith({
     String? id,
     String? name,
@@ -51,13 +45,34 @@ class UserModel {
     );
   }
 
-
   @override
-  String toString() {
-    return jsonEncode(toJson());
-  }
-
+  String toString() => jsonEncode(toJson());
 
   @override
   int get hashCode => id.hashCode;
 }
+
+
+
+
+
+
+/// -------------------------
+/// Test data inside this file
+/// -------------------------
+
+
+
+
+// A sample “backend-like” object
+const Map<String, dynamic> testUserJson = {
+  'id': '001',
+  'name': 'John Doe',
+  'email': 'john@test.com',
+  'avatarUrl': 'https://example.com/avatar.jpg',
+};
+
+// Convert test JSON into a UserModel instance
+final UserModel testUser = UserModel.fromJson(testUserJson);
+
+

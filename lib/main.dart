@@ -3,8 +3,7 @@ import 'pages/home_page.dart';
 // import 'pages/party_page.dart';
 import 'pages/settings_page.dart';
 import 'package:provider/provider.dart';
-import 'provider/appProvider.dart';
-import './provider/provider/userProvider.dart';
+import 'store/provider/userProvider.dart';
 import 'pages/auth/login.dart';
 import 'pages/auth/register.dart';
 import 'pages/auth/profile.dart';
@@ -15,11 +14,8 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => UserProvider()),
-        ChangeNotifierProxyProvider<UserProvider, AppProvider>(
-          create: (_) => AppProvider(userProvider: null),
-          update: (_, userProvider, previous) =>
-              AppProvider(userProvider: userProvider),
+        ChangeNotifierProvider(
+          create: (context) => UserProvider()
         ),
       ],
       child: MyApp(),
@@ -30,8 +26,9 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    print(context.watch<UserProvider>().user?.name);
     return MaterialApp(
-      title: 'Flutter Project',
+      title: 'SPLIT',
       theme: ThemeData(
         primarySwatch: Colors.teal,
         scaffoldBackgroundColor: Colors.white,
