@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:game_v1/widget/molcule_card.dart';
 import '../widget/atom_title_page.dart';
 import 'package:flutter/services.dart';
 import '../widget/atom_background_page.dart';
@@ -42,94 +43,101 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
       // appBar: AppBar(title: Text("Rejoindre une partie")), // optionnel
       body: Stack(
         children: [
-          BackgroundPage(pathBackground: "../../assets/images/quai_gare.png"),
+          BackgroundPage(pathBackground: "../../assets/images/carrefour.png"),
 
           Column(
             children: [
               AtomTitle(
                 title: "Rejoindre une Partie",
-                color: Color.fromARGB(255, 255, 70, 101),
+                color: Colors.blueAccent,
               ),
 
-              Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: 400, minHeight: 200),
-                  child: Form(
-                    key: _formKey,
+              Expanded(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: 320),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        children: [
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              'Code de la partie',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          TextFormField(
-                            controller: _controller,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                              LengthLimitingTextInputFormatter(6),
-                            ],
-                            decoration: InputDecoration(
-                              hintText: 'Entrez le code à 6 chiffres',
-                              filled: true,
-                              fillColor: Colors.white,
-                              contentPadding: EdgeInsets.symmetric(
-                                vertical: 20,
-                                horizontal: 16,
-                              ),
-
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.grey,
-                                  width: 1,
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Padding(
+                                padding: EdgeInsets.all(6),
+                                child: Container(
+                                  padding: EdgeInsets.all(8), // padding interne
+                                  decoration: BoxDecoration(
+                                    color: Color.fromARGB(100, 0, 0, 0),
+                                    borderRadius: BorderRadius.circular(
+                                      8,
+                                    ), // radius
+                                  ),
+                                  child: Text(
+                                    'Code de la partie',
+                                    style: Theme.of(context).textTheme.bodyLarge
+                                        ?.copyWith(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                  ),
                                 ),
                               ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.blue,
-                                  width: 2,
+                            ),
+                            // SizedBox(height: 8),
+
+                            // Ton TextFormField
+                            TextFormField(
+                              controller: _controller,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(6),
+                              ],
+                              decoration: InputDecoration(
+                                hintText: '______',
+                                filled: true,
+                                fillColor: Colors.white,
+                                contentPadding: EdgeInsets.symmetric(
+                                  vertical: 20,
+                                  horizontal: 16,
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Colors.blue,
+                                    width: 6,
+                                  ),
                                 ),
                               ),
-
-                              counterText: '',
-                            ),
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            validator: _validator,
-                          ),
-                          SizedBox(height: 16),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(
-                                vertical: 16,
-                                horizontal: 24,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            onPressed: _onValidate,
-                            child: Text(
-                              'Rejoindre',
                               style: TextStyle(
-                                fontSize: 18,
+                                fontSize: 32,
                                 fontWeight: FontWeight.bold,
+                                letterSpacing: 25,
                               ),
+                              validator: _validator,
                             ),
-                          ),
-                        ],
+
+                            SizedBox(height: 16),
+
+                            MoleculeCard(
+                              label: "Rejoindre la partie",
+                              onPressed: () {
+                                Navigator.pushNamed(context, '/create_party');
+                              },
+                              bgColor: Color.fromARGB(255, 18, 184, 10),
+                              width: 320,
+                              height: 120,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
