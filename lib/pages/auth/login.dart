@@ -9,7 +9,7 @@ class Login extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Taille de l'écran pour le responsive design
+    //responsive
     final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
@@ -20,8 +20,6 @@ class Login extends StatelessWidget {
             pathBackground: '../../assets/images/voiture_rouge.png',
           ),
 
-          // Filtre semi-transparent pour améliorer la lisibilité
-          Container(color: Colors.black.withAlpha(3)),
           // Contenu principal
           Center(
             child: SingleChildScrollView(

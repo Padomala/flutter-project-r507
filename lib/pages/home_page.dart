@@ -5,6 +5,7 @@ import '../widget/molcule_card.dart';
 import '../widget/bottom_nav_bar.dart';
 import 'package:provider/provider.dart';
 import '../store/provider/userProvider.dart';
+import '../widget/settings_popup.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -48,7 +49,7 @@ class HomePage extends StatelessWidget {
                 children: [
                   // Titre
                   Spacer(),
-                  AtomTitle(text: context.watch<UserProvider>().user?.name ?? 'MON PROFIL'),
+                  AtomTitle(text: "SPLIT"),
                   SizedBox(height: 16),
                   // Boutons principaux en Molécule
                   Column(
@@ -81,6 +82,8 @@ class HomePage extends StatelessWidget {
             ),
           ),
           // Boutons de navigation inférieurs (barre fixe)
+          const SettingsPopup(),
+
           const BottomNavBar(),
         ],
       ),

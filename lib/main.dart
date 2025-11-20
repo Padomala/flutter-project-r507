@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:game_v1/pages/shop_page.dart';
 import 'pages/home_page.dart';
 // import 'pages/party_page.dart';
@@ -10,6 +11,8 @@ import 'pages/auth/register.dart';
 import 'pages/auth/profile.dart';
 import 'pages/create_party.dart';
 import 'pages/join_party.dart';
+import 'package:provider/provider.dart';
+import '../store/provider/userProvider.dart';
 
 void main() {
   runApp(
@@ -41,7 +44,25 @@ class MyApp extends StatelessWidget {
         '/shop': (context) => ShopPage(),
         '/settings': (context) => SettingsPage(),
         '/profile': (context) => Profile(),
+        // final user = context.watch<UserProvider>().user;
+        // if (user?.isConnected == true) {
+        //   return Profile();
+        // } else {
+        //   SystemNavigator.routeInformationUpdated(uri: Uri(path: "#/login"));
+        //   return Login();
+        // }
+        // },
         '/login': (context) => Login(),
+        // final user = context.watch<UserProvider>().user;
+        // if (user?.isConnected == true) {
+        //   SystemNavigator.routeInformationUpdated(
+        //     uri: Uri(path: "#/profile"),
+        //   );
+        //   return Profile();
+        // } else {
+        //   return Login();
+        // }
+        // },
         '/register': (context) => Register(),
       },
     );

@@ -9,6 +9,7 @@ class Register extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    //responsive
     final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
@@ -100,7 +101,7 @@ class Register extends StatelessWidget {
                         ),
                         TextButton(
                           onPressed: () {
-                            Navigator.pop(context, '/login');
+                            Navigator.pushNamed(context, '/login');
                           },
                           child: const Text(
                             'Se connecter',
