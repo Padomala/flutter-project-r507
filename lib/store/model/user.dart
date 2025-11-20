@@ -4,12 +4,14 @@ class UserModel {
   final String id;
   final String name;
   final String email;
+  final bool isConnected;
   final String? avatarUrl;
 
   UserModel({
     required this.id,
     required this.name,
     required this.email,
+    required this.isConnected,
     this.avatarUrl,
   });
 
@@ -18,6 +20,7 @@ class UserModel {
       id: json['id'] as String,
       name: json['name'] as String,
       email: json['email'] as String,
+      isConnected: true,
       avatarUrl: json['avatarUrl'] as String?,
     );
   }
@@ -35,12 +38,14 @@ class UserModel {
     String? id,
     String? name,
     String? email,
+    bool? isConnected,
     String? avatarUrl,
   }) {
     return UserModel(
       id: id ?? this.id,
       name: name ?? this.name,
       email: email ?? this.email,
+      isConnected: isConnected ?? this.isConnected,
       avatarUrl: avatarUrl ?? this.avatarUrl,
     );
   }
