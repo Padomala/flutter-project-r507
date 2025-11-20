@@ -3,8 +3,12 @@ import '../widget/atom_button.dart';
 import '../widget/atom_title.dart';
 import '../widget/molcule_card.dart';
 import '../widget/bottom_nav_bar.dart';
+import 'package:provider/provider.dart';
+import '../store/provider/userProvider.dart';
 
 class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
   @override
   Widget build(BuildContext context) {
     final double cardSpacing = 20.0;
@@ -44,13 +48,13 @@ class HomePage extends StatelessWidget {
                 children: [
                   // Titre
                   Spacer(),
-                  AtomTitle(text: 'SPLIT'),
+                  AtomTitle(text: context.watch<UserProvider>().user?.name ?? 'MON PROFIL'),
                   SizedBox(height: 16),
                   // Boutons principaux en Molécule
                   Column(
                     children: [
                       MoleculeCard(
-                        label: 'CREER UNE PARTIE',
+                        label: 'CRÉER UNE PARTIE',
                         onPressed: () {
                           Navigator.pushNamed(context, '/create_party');
                         },
