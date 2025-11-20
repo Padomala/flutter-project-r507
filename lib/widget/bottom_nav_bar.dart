@@ -40,7 +40,7 @@ class BottomNavBar extends StatelessWidget {
                 Navigator.pushNamed(context, '/shop');
               },
               icon: Icon(Icons.store, color: Colors.white, size: 28),
-              tooltip: 'Magasin',
+              tooltip: 'Shop',
             ),
           ],
         ),

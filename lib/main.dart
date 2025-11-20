@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:game_v1/pages/shop_page.dart';
 import 'pages/home_page.dart';
 // import 'pages/party_page.dart';
 import 'pages/settings_page.dart';
@@ -13,17 +14,15 @@ import 'pages/join_party.dart';
 void main() {
   runApp(
     MultiProvider(
-      providers: [
-        ChangeNotifierProvider(
-          create: (context) => UserProvider()
-        ),
-      ],
+      providers: [ChangeNotifierProvider(create: (context) => UserProvider())],
       child: MyApp(),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     print(context.watch<UserProvider>().user?.name);
@@ -39,7 +38,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => HomePage(),
         '/create_party': (context) => CreatePartyPage(),
         '/join_party': (context) => JoinPartyPage(),
-
+        '/shop': (context) => ShopPage(),
         '/settings': (context) => SettingsPage(),
         '/profile': (context) => Profile(),
         '/login': (context) => Login(),
