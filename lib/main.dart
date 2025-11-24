@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:game_v1/pages/shop_page.dart';
@@ -13,12 +14,18 @@ import 'pages/create_party.dart';
 import 'pages/join_party.dart';
 import 'package:provider/provider.dart';
 import '../store/provider/userProvider.dart';
+import '../store/provider/audio_provider.dart';
+import '../store/provider/vibration_provider.dart';
 
 void main() {
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (context) => UserProvider())],
-      child: MyApp(),
+      providers: [
+        ChangeNotifierProvider(create: (context) => UserProvider()),
+        ChangeNotifierProvider(create: (context) => AudioProvider()),
+        ChangeNotifierProvider(create: (context) => VibrationProvider()),
+      ],
+      child: const MyApp(),
     ),
   );
 }

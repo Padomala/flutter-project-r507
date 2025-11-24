@@ -24,7 +24,7 @@ class ToggleButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: value ? Colors.green : Colors.red,
+          backgroundColor: value ? Colors.red : Colors.green,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(28),
             side: const BorderSide(color: Colors.white, width: 4),
