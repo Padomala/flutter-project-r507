@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class AtomTitle extends StatelessWidget {
   final String title;
   final Color color;
+
   final bool showBack;
   final VoidCallback? onSettings;
 
@@ -17,12 +18,11 @@ class AtomTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 90, 
+      height: 90,
       width: double.infinity,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-
           // --- Ellipse géante ---
           Positioned(
             top: -210,
@@ -49,12 +49,14 @@ class AtomTitle extends StatelessWidget {
                 // Bouton retour (optionnel)
                 if (showBack)
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new,
+                      color: Colors.white,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   )
                 else
                   const SizedBox(width: 48), // pour conserver l'alignement
-
                 // Bouton settings
                 IconButton(
                   icon: const Icon(Icons.settings, color: Colors.white),

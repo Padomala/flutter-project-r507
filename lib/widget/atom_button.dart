@@ -14,27 +14,31 @@ class AtomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(
-            color: Colors.white,
-            width:
-                4, // ← épaisseur du contour, mets 5 si tu veux un truc bien bourrin
+    return SizedBox(
+      width: 320,
+      height: 120,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+            side: const BorderSide(
+              color: Colors.white,
+              width:
+                  12, // ← épaisseur du contour, mets 5 si tu veux un truc bien bourrin
+            ),
           ),
+          padding: EdgeInsets.symmetric(horizontal: 28, vertical: 22),
+          elevation: 6,
         ),
-        padding: EdgeInsets.symmetric(horizontal: 28, vertical: 20),
-        elevation: 6,
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.w700,
-          color: Colors.white,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
         ),
       ),
     );
