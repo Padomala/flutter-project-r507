@@ -1,11 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:game_v1/core/services/supabase_service.dart';
+import 'package:game_v1/pages/auth/register.dart';
 import '../../widget/molecules/text_field.dart';
 import '../../app_colors.dart';
 import '../../widget/molcule_card.dart';
 import '../../widget/atom_background_page.dart';
 
-class Login extends StatelessWidget {
+class Login extends StatefulWidget {
   const Login({super.key});
+
+  @override
+  State<Login> createState() => _LoginPageState();
+}
+
+
+class _LoginPageState extends State<Login> {
+  // get auth service
+  final supabaseService = SupabaseService();
+
+  // text controller
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  // login button pressed
+  void login() async {
+    // prepare data
+    final email = _emailController.text;
+    final password = _passwordController.text;
+
+    // attempt login
+    try {
+      await supabaseService.signIn(String, email, password);
+    }
+    catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Error: $e")));
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +90,7 @@ class Login extends StatelessWidget {
                     const SizedBox(height: 20),
                     // Champ Email
                     CustomTextField(
+                      controller: _emailController,
                       label: "EMAIL",
                       hintText: "Entrez votre email",
                       icon: Icons.email,
@@ -65,6 +99,7 @@ class Login extends StatelessWidget {
                     const SizedBox(height: 15),
                     // Champ mot de passe
                     CustomTextField(
+                      controller: _passwordController,
                       label: "PASSWORD",
                       hintText: "Entrez votre mot de passe",
                       icon: Icons.password,
@@ -75,57 +110,64 @@ class Login extends StatelessWidget {
                     SizedBox(
                       child: MoleculeCard(
                         label: 'SE CONNECTER',
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/home_page');
-                        },
+                        onPressed: login,
                         bgColor: AppColors.blue,
                         width: 320,
                         height: 100,
                       ),
                     ),
-
-                    // Séparateur "Ou se connecter avec"
-                    const Row(
-                      children: [
-                        Expanded(child: Divider()),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text(
-                            'Ou se connecter avec',
-                            style: TextStyle(
-                              color: Colors.black54,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                        Expanded(child: Divider()),
-                      ],
-                    ),
-
-                    // Bouton Google
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          // Logique de connexion avec Google
-                        },
-                        icon: const Icon(
-                          Icons.g_mobiledata,
-                          color: AppColors.red,
-                        ),
-                        label: const Text(
-                          'Google',
-                          style: TextStyle(fontSize: 16, color: AppColors.red),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
+                    GestureDetector(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const Register()
+                        )
                       ),
-                    ),
-                    const SizedBox(height: 15),
+                      child: const Center(child: Text("Vous n'avez pas de compte ? Inscrivez-vous"),),
+                    )
+
+                    // // Séparateur "Ou se connecter avec"
+                    // const Row(
+                    //   children: [
+                    //     Expanded(child: Divider()),
+                    //     Padding(
+                    //       padding: EdgeInsets.symmetric(horizontal: 10),
+                    //       child: Text(
+                    //         'Ou se connecter avec',
+                    //         style: TextStyle(
+                    //           color: Colors.black54,
+                    //           fontSize: 14,
+                    //         ),
+                    //       ),
+                    //     ),
+                    //     Expanded(child: Divider()),
+                    //   ],
+                    // ),
+
+                    // // Bouton Google
+                    // SizedBox(
+                    //   width: double.infinity,
+                    //   child: OutlinedButton.icon(
+                    //     onPressed: () {
+                    //       // Logique de connexion avec Google
+                    //     },
+                    //     icon: const Icon(
+                    //       Icons.g_mobiledata,
+                    //       color: AppColors.red,
+                    //     ),
+                    //     label: const Text(
+                    //       'Google',
+                    //       style: TextStyle(fontSize: 16, color: AppColors.red),
+                    //     ),
+                    //     style: OutlinedButton.styleFrom(
+                    //       padding: const EdgeInsets.symmetric(vertical: 12),
+                    //       shape: RoundedRectangleBorder(
+                    //         borderRadius: BorderRadius.circular(10),
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
+                    // const SizedBox(height: 15),
                   ],
                 ),
               ),

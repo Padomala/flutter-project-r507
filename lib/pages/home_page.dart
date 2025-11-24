@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../widget/atom_button.dart';
 import '../widget/atom_title.dart';
 import '../widget/molcule_card.dart';
 import '../widget/bottom_nav_bar.dart';
@@ -48,7 +47,7 @@ class HomePage extends StatelessWidget {
                 children: [
                   // Titre
                   Spacer(),
-                  AtomTitle(text: context.watch<UserProvider>().user?.name ?? 'MON PROFIL'),
+                  AtomTitle(text: context.watch<UserProvider>().user.name ?? 'MON PROFIL'),
                   SizedBox(height: 16),
                   // Boutons principaux en Molécule
                   Column(

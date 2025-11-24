@@ -1,11 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:game_v1/core/services/supabase_service.dart';
 import '../../widget/atom_background_page.dart';
 import '../../widget/molecules/text_field.dart';
 import '../../app_colors.dart';
 import '../../widget/molcule_card.dart';
 
-class Register extends StatelessWidget {
+class Register extends StatefulWidget {
   const Register({super.key});
+
+  @override
+  State<Register> createState() => _RegisterPageState();
+}
+
+
+class _RegisterPageState extends State<Register> {
+  // get auth service
+  final supabaseService = SupabaseService();
+
+  // text controller
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+
+  // login button pressed
+  void register() async {
+    // prepare data
+    final email = _emailController.text;
+    final password = _passwordController.text;
+
+    // attempt login
+    try {
+      await supabaseService.signIn(String, email, password);
+    }
+    catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Error: $e")));
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,8 +101,18 @@ class Register extends StatelessWidget {
 
                     // Champ Mot de passe
                     CustomTextField(
+                      controller: _passwordController,
                       label: "MOT DE PASSE",
                       hintText: "Entrez votre mot de passe",
+                      icon: Icons.password,
+                      fieldType: EnumFieldType.password,
+                    ),
+
+                    // Champ Confirmer Mot de Passe
+                    CustomTextField(
+                      controller: _passwordConfirmController,
+                      label: "CONFIRMER MOT DE PASSE",
+                      hintText: "Confirmez votre mot de passe",
                       icon: Icons.password,
                       fieldType: EnumFieldType.password,
                     ),
@@ -79,9 +122,7 @@ class Register extends StatelessWidget {
                     SizedBox(
                       child: MoleculeCard(
                         label: 'S\'INSCRIRE',
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/home_page');
-                        },
+                        onPressed: register,
                         bgColor: AppColors.blue,
                         width: 320,
                         height: 100,

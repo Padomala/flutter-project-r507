@@ -1,60 +1,40 @@
-import 'dart:convert';
-
 class UserModel {
   final String id;
   final String name;
   final String email;
-  final bool isConnected;
   final String? avatarUrl;
+  final bool isConnected;
 
-  UserModel({
+  const UserModel({
     required this.id,
     required this.name,
     required this.email,
-    required this.isConnected,
     this.avatarUrl,
+    this.isConnected = false,
   });
 
-  factory UserModel.fromJson(Map<String, dynamic> json) {
-    return UserModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      email: json['email'] as String,
-      isConnected: true,
-      avatarUrl: json['avatarUrl'] as String?,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'email': email,
-      'avatarUrl': avatarUrl,
-    };
-  }
+  const UserModel.guest()
+      : id = 'guest',
+        name = 'Guest',
+        email = 'not connected',
+        avatarUrl = null,
+        isConnected = false;
 
   UserModel copyWith({
     String? id,
     String? name,
     String? email,
-    bool? isConnected,
     String? avatarUrl,
+    bool? isConnected,
   }) {
     return UserModel(
       id: id ?? this.id,
       name: name ?? this.name,
       email: email ?? this.email,
-      isConnected: isConnected ?? this.isConnected,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      isConnected: isConnected ?? this.isConnected,
     );
   }
-
-  @override
-  String toString() => jsonEncode(toJson());
-
-  @override
-  int get hashCode => id.hashCode;
 }
 
 
@@ -62,22 +42,5 @@ class UserModel {
 
 
 
-/// -------------------------
-/// Test data inside this file
-/// -------------------------
-
-
-
-
-// A sample “backend-like” object
-const Map<String, dynamic> testUserJson = {
-  'id': '001',
-  'name': 'John Doe',
-  'email': 'john@test.com',
-  'avatarUrl': 'https://example.com/avatar.jpg',
-};
-
-// Convert test JSON into a UserModel instance
-final UserModel testUser = UserModel.fromJson(testUserJson);
 
 

@@ -5,13 +5,18 @@ import 'pages/home_page.dart';
 import 'pages/settings_page.dart';
 import 'package:provider/provider.dart';
 import 'store/provider/userProvider.dart';
+
+import 'core/services/supabase_service.dart';
 import 'pages/auth/login.dart';
 import 'pages/auth/register.dart';
 import 'pages/auth/profile.dart';
 import 'pages/create_party.dart';
 import 'pages/join_party.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();  //we just wait for initialization
+  await SupabaseService.initialize();         //we wait to get the url and mdp to connect
+
   runApp(
     MultiProvider(
       providers: [ChangeNotifierProvider(create: (context) => UserProvider())],
@@ -25,7 +30,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print(context.watch<UserProvider>().user?.name);
+    print(context.watch<UserProvider>().user.name);
     return MaterialApp(
       title: 'SPLIT',
       theme: ThemeData(
