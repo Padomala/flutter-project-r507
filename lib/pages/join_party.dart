@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:game_v1/widget/atom_button.dart';
 import 'package:game_v1/widget/molcule_card.dart';
 import '../widget/atom_title_page.dart';
 import 'package:flutter/services.dart';
@@ -40,24 +41,24 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(title: Text("Rejoindre une partie")), // optionnel
+      appBar: AppBar(
+        title: AtomTitle(
+          title: "Rejoindre une Partie",
+          color: Colors.blueAccent,
+        ),
+      ), // optionnel
       body: Stack(
         children: [
           BackgroundPage(pathBackground: "../../assets/images/carrefour.png"),
-
           Column(
             children: [
-              AtomTitle(
-                title: "Rejoindre une Partie",
-                color: Colors.blueAccent,
-              ),
-
               Expanded(
                 child: Center(
                   child: ConstrainedBox(
                     constraints: BoxConstraints(maxWidth: 320),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
+                      // FORMULAIARE START
                       child: Form(
                         key: _formKey,
                         child: Column(
@@ -127,15 +128,30 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
 
                             SizedBox(height: 16),
 
-                            MoleculeCard(
+                            AtomButton(
                               label: "Rejoindre la partie",
-                              onPressed: () {
-                                Navigator.pushNamed(context, '/create_party');
+                              color: Color.fromARGB(255, 18, 184, 10),
+                              onPressed: () => {
+                                if (_formKey.currentState!.validate())
+                                  {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Processing Data'),
+                                      ),
+                                    ),
+                                  },
                               },
-                              bgColor: Color.fromARGB(255, 18, 184, 10),
-                              width: 320,
-                              height: 120,
                             ),
+
+                            // MoleculeCard(
+                            //   label: "Rejoindre la partie",
+                            //   onPressed: () {
+                            //     Navigator.pushNamed(context, '');
+                            //   },
+                            //   bgColor: Color.fromARGB(255, 18, 184, 10),
+                            //   width: 320,
+                            //   height: 120,
+                            // ),
                           ],
                         ),
                       ),

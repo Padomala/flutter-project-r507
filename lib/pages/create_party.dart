@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:game_v1/widget/atom_button.dart';
 import '../widget/atom_title_page.dart';
 import '../widget/atom_background_page.dart';
 import '../widget/molcule_card.dart';
@@ -15,7 +16,7 @@ class CreatePartyPage extends StatefulWidget {
 class _CreatePartyPageState extends State<CreatePartyPage> {
   final _formKey = GlobalKey<FormState>();
   final _controller = TextEditingController();
-  int _nbGames = 5; 
+  int _nbGames = 5;
 
   @override
   void dispose() {
@@ -24,10 +25,10 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
   }
 
   void _onValidate() {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text("Nombre de mini-jeux choisi : $_nbGames")),
-  );
-}
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Nombre de mini-jeux choisi : $_nbGames")),
+    );
+  }
 
   String? _validator(String? value) {
     if (value == null || value.trim().isEmpty) return "Champ requis";
@@ -41,17 +42,18 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: AtomTitle(
+          title: "Créer une Partie",
+          color: Color.fromARGB(255, 255, 70, 101),
+        ),
+        
+      ),
       body: Stack(
         children: [
           BackgroundPage(pathBackground: "../../assets/images/carrefour.png"),
-
           Column(
             children: [
-              AtomTitle(
-                title: "Créer une Partie",
-                color: Color.fromARGB(255, 255, 70, 101),
-              ),
-
               Expanded(
                 child: Center(
                   child: ConstrainedBox(
@@ -103,14 +105,33 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
 
                             const SizedBox(height: 16),
 
-                            // ---- VALIDATION BUTTON ----
-                            MoleculeCard(
-                              label: "Créer la partie",
-                              onPressed: _onValidate,
-                              bgColor: Color.fromARGB(255, 18, 184, 10),
-                              width: 320,
-                              height: 120,
+                            AtomButton(
+                              label: "Rejoindre la partie",
+                              color: Color.fromARGB(255, 18, 184, 10),
+                              onPressed: () => {
+                                if (_formKey.currentState!.validate())
+                                  {
+                                    // Générer un code de room soit en flutter soit en SLQ puis le récupérer et rédiriger ensuite vers la page suivante.
+                                    // Je génère le code
+                                    // Je l'insert en base
+                                    // J'effectue la navigation vers la page roomHub
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Processing Data'),
+                                      ),
+                                    ),
+                                  },
+                              },
                             ),
+
+                            // ---- VALIDATION BUTTON ----
+                            // MoleculeCard(
+                            //   label: "Créer la partie",
+                            //   onPressed: _onValidate,
+                            //   bgColor: Color.fromARGB(255, 18, 184, 10),
+                            //   width: 320,
+                            //   height: 120,
+                            // ),
                           ],
                         ),
                       ),
