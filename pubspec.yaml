@@ -26,7 +26,7 @@ flutter:
   assets:  # Lists assets, such as image files
     - assets/images/
     - assets/fonts/
-    - assets/audio/
+    - assets/audio/   
 
   fonts:              # Required if your app uses custom fonts
   - family: Motley_Forces
