@@ -12,22 +12,10 @@ import 'pages/auth/register.dart';
 import 'pages/auth/profile.dart';
 import 'pages/create_party.dart';
 import 'pages/join_party.dart';
-import 'package:provider/provider.dart';
-import '../store/provider/userProvider.dart';
-import '../store/provider/audio_provider.dart';
-import '../store/provider/vibration_provider.dart';
+import '../store/provider/app_providers.dart';
 
 void main() {
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (context) => UserProvider()),
-        ChangeNotifierProvider(create: (context) => AudioProvider()),
-        ChangeNotifierProvider(create: (context) => VibrationProvider()),
-      ],
-      child: const MyApp(),
-    ),
-  );
+  runApp(const AppProviders(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
