@@ -32,7 +32,7 @@ class AtomTitle extends StatelessWidget {
               clipBehavior: Clip.none,
               height: 300,
               decoration: BoxDecoration(
-                color: color.withAlpha(20),
+                color: color.withAlpha(220),
                 borderRadius: BorderRadius.circular(1000),
               ),
             ),
