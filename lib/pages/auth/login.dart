@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:game_v1/core/services/supabase_service.dart';
 import 'package:game_v1/pages/auth/register.dart';
+import 'package:game_v1/store/provider/userProvider.dart';
+import 'package:provider/provider.dart';
 import '../../widget/molecules/text_field.dart';
 import '../../app_colors.dart';
 import '../../widget/molcule_card.dart';
@@ -23,20 +25,17 @@ class _LoginPageState extends State<Login> {
   final _passwordController = TextEditingController();
 
   // login button pressed
-  void login() async {
-    // prepare data
-    final email = _emailController.text;
-    final password = _passwordController.text;
-
-    // attempt login
+  void onPressedLogin() async {
     try {
-      await supabaseService.signIn(String, email, password);
-    }
-    catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Error: $e")));
-      }
+      await context.read<UserProvider>().login(
+        email: _emailController.text, 
+        password: _passwordController.text
+      );
+      Navigator.pop(context, "/profile");
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login failed: $e')),
+      );
     }
   }
 
@@ -110,19 +109,14 @@ class _LoginPageState extends State<Login> {
                     SizedBox(
                       child: MoleculeCard(
                         label: 'SE CONNECTER',
-                        onPressed: login,
+                        onPressed: onPressedLogin,
                         bgColor: AppColors.blue,
                         width: 320,
                         height: 100,
                       ),
                     ),
                     GestureDetector(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const Register()
-                        )
-                      ),
+                      onTap: () => Navigator.pop(context, "/register"),
                       child: const Center(child: Text("Vous n'avez pas de compte ? Inscrivez-vous"),),
                     )
 

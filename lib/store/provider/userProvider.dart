@@ -1,70 +1,111 @@
 import 'package:flutter/material.dart';
-import 'package:game_v1/core/services/supabase_service.dart';
-
+import 'package:game_v1/core/services/supabase_service.dart'; // Make sure this path is correct
 import '../model/user.dart';
 
 class UserProvider with ChangeNotifier {
-  UserProvider() : _currentUser = const UserModel.guest();  //we create a user 'guest'
+  // Instance of our service to handle backend calls
+  final SupabaseService _authService = SupabaseService();
 
-  UserModel _currentUser;   //we set the current user at the previously made guest
-  bool _isConnecting = false; //we set isConnecting at false
+  UserProvider() : _currentUser = const UserModel.guest();
 
-  UserModel get user => _currentUser; //if we ask user, we get the current user
-  bool get isConnected => _currentUser.isConnected; //we set quick way to get info like isConnected or isConnecting
+  UserModel _currentUser;
+  bool _isConnecting = false;
+
+  UserModel get user => _currentUser;
+  bool get isConnected => _currentUser.isConnected;
   bool get isConnecting => _isConnecting;
 
-  /// Allows updating local profile fields while keeping the connection flag.
-  void updateUser(UserModel user) {
-    _currentUser = user.copyWith(isConnected: true);
-    notifyListeners();
-  }
-
-  /// Marks the single user as disconnected but keeps the last known profile so
-  /// widgets can continue to display information offline.
-  void disconnect() {
-    _currentUser = _currentUser.copyWith(isConnected: false);
-    notifyListeners();
-  }
+  /// --- LOCAL STATE HELPERS ---
 
   void _setConnecting(bool value) {
     _isConnecting = value;
     notifyListeners();
   }
 
-  /// Immediately marks the in-memory user as connected so the UI always has a
-  /// single source of truth without waiting for any backend.
-  // Future<void> connect({
-  //   required String email,
-  //   required String mdp,
-  // }) async {
-  //   _setConnecting(true);
-  //   try {
-  //     // Attempt to log in with Supabase email & password
-  //     final response = await SupabaseService.signIn(email,mdp);
-  //     final session = response.session;
-  //     final user = response.user;
+  /// --- AUTHENTICATION ACTIONS ---
 
-  //     if (user != null && session != null) {
-  //       _currentUser = UserModel(
-  //         id: user.id,
-  //         name: user.userMetadata?['name'] ?? user.email ?? '',
-  //         email: user.email ?? '',
-  //         avatarUrl: user.userMetadata?['avatar_url'],
-  //         isConnected: true,
-  //       );
-  //     } else {
-  //       // Reset to guest if login failed
-  //       _currentUser = const UserModel.guest();
-  //     }
-  //   } catch (e) {
-  //     // In case of error, rollback to guest and rethrow/error-handle as needed
-  //     _currentUser = const UserModel.guest();
-  //     // Optionally, you could log the error or show a message
-  //     // print('Login failed: $e');
-  //   }
-  //   notifyListeners();
-  //   _setConnecting(false);
-  // }
+  /// Logs in the user using Email and Password via Supabase
+  Future<void> login({
+    required String email,
+    required String password,
+  }) async {
+    _setConnecting(true);
 
-  
+    try {
+      // 1. Call the service to sign in
+      final response = await _authService.signIn(email, password);
+
+      final session = response.session;
+      final authUser = response.user;
+
+      // 2. Check if we got a valid user back
+      if (authUser != null && session != null) {
+        // 3. Map Supabase User to your local UserModel
+        _currentUser = UserModel(
+          id: authUser.id,
+          // Fallback to email if 'name' metadata is missing
+          name: authUser.userMetadata?['name'] ?? authUser.email ?? 'Unknown',
+          email: authUser.email ?? '',
+          avatarUrl: authUser.userMetadata?['avatar_url'],
+          isConnected: true,
+        );
+      } else {
+        // If response was weirdly empty, treat as guest
+        _currentUser = const UserModel.guest();
+      }
+    } catch (e) {
+      // 4. On error, ensure we are reset to guest and rethrow 
+      // so the UI knows something went wrong (e.g. show Snackbar)
+      _currentUser = const UserModel.guest();
+      rethrow; 
+    } finally {
+      // 5. Always stop loading and notify UI
+      _setConnecting(false);
+      notifyListeners();
+    }
+  }
+
+  /// Registers a new user
+  Future<void> register({
+    required String email,
+    required String password,
+  }) async {
+    _setConnecting(true);
+    try {
+      final response = await _authService.signUp(email, password);
+      
+      final authUser = response.user;
+      
+      if (authUser != null) {
+        // Depending on your app flow, you might want to log them in directly
+        // or ask them to verify email. For now, let's log them in locally.
+        _currentUser = UserModel(
+          id: authUser.id,
+          name: authUser.email ?? 'New User',
+          email: authUser.email ?? '',
+          isConnected: true,
+        );
+      }
+    } catch (e) {
+      rethrow;
+    } finally {
+      _setConnecting(false);
+      notifyListeners();
+    }
+  }
+
+  /// Logs out from Supabase and resets local state
+  Future<void> logout() async {
+    _setConnecting(true);
+    try {
+      await _authService.signOut();
+    } catch (e) {
+      // Even if Supabase errors out, we want to clear local state
+      debugPrint("Error signing out: $e");
+    } finally {
+      _currentUser = const UserModel.guest();
+      _setConnecting(false);
+      notifyListeners();
+    }
+  }
 }

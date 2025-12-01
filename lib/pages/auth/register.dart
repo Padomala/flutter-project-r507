@@ -20,6 +20,7 @@ class _RegisterPageState extends State<Register> {
   // text controller
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _passwordConfirmController = TextEditingController();
 
 
   // login button pressed
@@ -27,16 +28,22 @@ class _RegisterPageState extends State<Register> {
     // prepare data
     final email = _emailController.text;
     final password = _passwordController.text;
+    final passwordConfirm = _passwordConfirmController.text;
 
     // attempt login
-    try {
-      await supabaseService.signIn(String, email, password);
-    }
-    catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Error: $e")));
+    if (password == passwordConfirm) {
+      try {
+        await supabaseService.signIn(email, password);
       }
+      catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text("Error: $e")));
+        }
+      }
+    } else {
+      ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text("Les mot de passe doivent-être identique")));
     }
   }
 

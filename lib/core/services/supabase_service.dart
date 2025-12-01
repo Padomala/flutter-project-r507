@@ -40,7 +40,7 @@ class SupabaseService {
 
 
   // SIGN IN
-  Future<AuthResponse> signIn(String, email, String password) async {
+  Future<AuthResponse> signIn(String email, String password) async {
     return await _supabase.auth.signInWithPassword(
       email: email,
       password: password
