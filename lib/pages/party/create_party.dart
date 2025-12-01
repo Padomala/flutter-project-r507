@@ -42,17 +42,15 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: AtomTitle(
-          title: "Créer une Partie",
-          color: Color.fromARGB(255, 255, 70, 101),
-        ),
-      ),
       body: Stack(
         children: [
           BackgroundPage(pathBackground: "../../assets/images/carrefour.png"),
           Column(
             children: [
+              AtomTitle(
+                title: "Créer une Partie",
+                color: Color.fromARGB(255, 255, 70, 101),
+              ),
               Expanded(
                 child: Center(
                   child: ConstrainedBox(
@@ -67,34 +65,32 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
                             // ---- LABEL ----
                             Align(
                               alignment: Alignment.centerLeft,
-                              child: Padding(
-                                padding: const EdgeInsets.all(6),
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: const Color.fromARGB(100, 0, 0, 0),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    "Nombre de mini-jeux",
-                                    style: Theme.of(context).textTheme.bodyLarge
-                                        ?.copyWith(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                  ),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color.fromARGB(100, 0, 0, 0),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  "Nombre de mini-jeux",
+                                  style: Theme.of(context).textTheme.bodyLarge
+                                      ?.copyWith(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
                                 ),
                               ),
                             ),
 
-                            const SizedBox(height: 8),
+                            // const SizedBox(height: 8),
 
                             // ---- ATOM NUMBER PICKER ----
                             AtomNumberPicker(
                               min: 1,
                               max: 20,
                               initial: _nbGames,
+                              width: 290,
                               onChanged: (value) {
                                 setState(() {
                                   _nbGames = value;
@@ -105,7 +101,8 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
                             const SizedBox(height: 16),
 
                             AtomButton(
-                              label: "Rejoindre la partie",
+                              label: "Créer la partie",
+                              bgColor: Color.fromARGB(255, 18, 184, 10),
                               onPressed: () => {
                                 if (_formKey.currentState!.validate())
                                   {
@@ -120,7 +117,6 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
                                     ),
                                   },
                               },
-                              bgColor: Color.fromARGB(255, 18, 184, 10),
                             ),
 
                             // ---- VALIDATION BUTTON ----
