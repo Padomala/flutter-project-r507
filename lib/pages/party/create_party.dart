@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:game_v1/widget/atom_button.dart';
-import '../widget/atom_title_page.dart';
-import '../widget/atom_background_page.dart';
-import '../widget/molcule_card.dart';
-import '../widget/molecule_numberPicker.dart';
+import 'package:game_v1/widget/atoms/atom_button.dart';
+import '../../widget/atoms/atom_title_page.dart';
+import '../../widget/atoms/atom_background_page.dart';
+import '../../widget/atoms/atom_button.dart';
+import '../../widget/atoms/atom_number_picker.dart';
 
 class CreatePartyPage extends StatefulWidget {
-  const CreatePartyPage({Key? key}) : super(key: key);
+  const CreatePartyPage({super.key});
 
   @override
   State<CreatePartyPage> createState() => _CreatePartyPageState();
@@ -47,7 +47,6 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
           title: "Créer une Partie",
           color: Color.fromARGB(255, 255, 70, 101),
         ),
-        
       ),
       body: Stack(
         children: [
@@ -107,7 +106,6 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
 
                             AtomButton(
                               label: "Rejoindre la partie",
-                              color: Color.fromARGB(255, 18, 184, 10),
                               onPressed: () => {
                                 if (_formKey.currentState!.validate())
                                   {
@@ -122,6 +120,7 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
                                     ),
                                   },
                               },
+                              bgColor: Color.fromARGB(255, 18, 184, 10),
                             ),
 
                             // ---- VALIDATION BUTTON ----

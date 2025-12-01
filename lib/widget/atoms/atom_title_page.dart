@@ -8,12 +8,12 @@ class AtomTitle extends StatelessWidget {
   final VoidCallback? onSettings;
 
   const AtomTitle({
-    Key? key,
+    super.key,
     required this.title,
     required this.color,
     this.showBack = true,
     this.onSettings,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +32,7 @@ class AtomTitle extends StatelessWidget {
               clipBehavior: Clip.none,
               height: 300,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.85),
+                color: color.withAlpha(20),
                 borderRadius: BorderRadius.circular(1000),
               ),
             ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../widget/atom_background_page.dart';
+import '../../widget/atoms/atom_background_page.dart';
 
 class ShopPage extends StatelessWidget {
   const ShopPage({super.key});

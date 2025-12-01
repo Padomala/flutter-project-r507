@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:game_v1/app_colors.dart';
 import 'package:provider/provider.dart';
-import '../widget/atom_toggle_button.dart';
-import '../store/provider/audio_provider.dart';
-import '../store/provider/vibration_provider.dart';
+import '../atoms/atom_toggle_button.dart';
+import '../../store/provider/audio_provider.dart';
+import '../../store/provider/vibration_provider.dart';
 
 class SettingsPopup extends StatelessWidget {
   const SettingsPopup({super.key});

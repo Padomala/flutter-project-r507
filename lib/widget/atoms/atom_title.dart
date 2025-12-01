@@ -1,14 +1,9 @@
-import 'dart:developer';
-
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class AtomTitle extends StatelessWidget {
   final String text;
 
-  const AtomTitle({Key? key, required this.text}) : super(key: key);
+  const AtomTitle({super.key, required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -26,4 +21,3 @@ class AtomTitle extends StatelessWidget {
     );
   }
 }
-

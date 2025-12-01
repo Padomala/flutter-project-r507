@@ -3,40 +3,41 @@ import 'package:flutter/material.dart';
 class AtomButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
-  final Color color;
+  final Color bgColor;
+  final double width;
+  final double height;
 
   const AtomButton({
-    Key? key,
+    super.key,
     required this.label,
     required this.onPressed,
-    this.color = Colors.redAccent,
-  }) : super(key: key);
+    this.bgColor = Colors.white,
+    this.width = 300,
+    this.height = 90,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 320,
-      height: 120,
+      width: width,
+      height: height,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: color,
+          backgroundColor: bgColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(28),
-            side: const BorderSide(
-              color: Colors.white,
-              width:
-                  12, // ← épaisseur du contour, mets 5 si tu veux un truc bien bourrin
-            ),
+            side: const BorderSide(color: Colors.white, width: 12),
           ),
-          padding: EdgeInsets.symmetric(horizontal: 28, vertical: 22),
-          elevation: 6,
+          elevation: 8,
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
         ),
         child: Text(
           label,
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
         ),

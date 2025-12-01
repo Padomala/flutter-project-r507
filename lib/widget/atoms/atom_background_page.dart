@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 class BackgroundPage extends StatelessWidget {
   final String pathBackground;
 
-  // Super parameter utilisé pour key
   const BackgroundPage({super.key, required this.pathBackground});
 
   @override

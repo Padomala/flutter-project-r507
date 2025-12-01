@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../widget/atom_background_page.dart';
-import '../../widget/molecules/text_field.dart';
+import '../../widget/atoms/atom_background_page.dart';
+import '../../widget/atoms/atom_text_field.dart';
 import '../../app_colors.dart';
-import '../../widget/molcule_card.dart';
+import '../../widget/atoms/atom_button.dart';
 
 class Register extends StatelessWidget {
   const Register({super.key});
@@ -78,7 +78,7 @@ class Register extends StatelessWidget {
 
                     // Bouton S'inscrire
                     SizedBox(
-                      child: MoleculeCard(
+                      child: AtomButton(
                         label: 'S\'INSCRIRE',
                         onPressed: () {
                           Navigator.pushNamed(context, '/home_page');

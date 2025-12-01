@@ -55,25 +55,16 @@ class _AtomNumberPickerState extends State<AtomNumberPicker> {
         mainAxisSize: MainAxisSize.min,
         children: [
           // BOUTON -
-          IconButton(
-            icon: Icon(Icons.remove),
-            onPressed: _decrement,
-          ),
+          IconButton(icon: Icon(Icons.remove), onPressed: _decrement),
 
           // VALEUR
           Text(
             "$value",
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
           ),
 
           // BOUTON +
-          IconButton(
-            icon: Icon(Icons.add),
-            onPressed: _increment,
-          ),
+          IconButton(icon: Icon(Icons.add), onPressed: _increment),
         ],
       ),
     );

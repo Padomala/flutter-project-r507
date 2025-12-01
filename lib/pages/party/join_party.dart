@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:game_v1/widget/atom_button.dart';
-import 'package:game_v1/widget/molcule_card.dart';
-import '../widget/atom_title_page.dart';
+import 'package:game_v1/widget/atoms/atom_button.dart';
+import 'package:game_v1/widget/atoms/atom_button.dart';
+import '../../widget/atoms/atom_title_page.dart';
 import 'package:flutter/services.dart';
-import '../widget/atom_background_page.dart';
+import '../../widget/atoms/atom_background_page.dart';
 
 class JoinPartyPage extends StatefulWidget {
-  const JoinPartyPage({Key? key}) : super(key: key);
+  const JoinPartyPage({super.key});
 
   @override
   State<JoinPartyPage> createState() => _JoinGameBodyMinimalState();
@@ -130,7 +130,6 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
 
                             AtomButton(
                               label: "Rejoindre la partie",
-                              color: Color.fromARGB(255, 18, 184, 10),
                               onPressed: () => {
                                 if (_formKey.currentState!.validate())
                                   {
@@ -141,6 +140,7 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
                                     ),
                                   },
                               },
+                              bgColor: Color.fromARGB(255, 18, 184, 10),
                             ),
 
                             // MoleculeCard(

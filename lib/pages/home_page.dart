@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../widget/atom_button.dart';
-import '../widget/atom_title.dart';
-import '../widget/molcule_card.dart';
-import '../widget/bottom_nav_bar.dart';
+import '../widget/atoms/atom_button.dart';
+import '../widget/atoms/atom_title.dart';
+import '../widget/atoms/atom_button.dart';
+import '../widget/organisms/bottom_nav_bar.dart';
 import 'package:provider/provider.dart';
-import '../store/provider/userProvider.dart';
-import '../widget/settings_popup.dart';
+import '../store/provider/user_provider.dart';
+import '../widget/organisms/settings_popup.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -54,7 +54,7 @@ class HomePage extends StatelessWidget {
                   // Boutons principaux en Molécule
                   Column(
                     children: [
-                      MoleculeCard(
+                      AtomButton(
                         label: 'CRÉER UNE PARTIE',
                         onPressed: () {
                           Navigator.pushNamed(context, '/create_party');
@@ -64,7 +64,7 @@ class HomePage extends StatelessWidget {
                         height: 120,
                       ),
                       SizedBox(height: cardSpacing),
-                      MoleculeCard(
+                      AtomButton(
                         label: 'REJOINDRE UNE PARTIE',
                         onPressed: () {
                           Navigator.pushNamed(context, '/join_party');

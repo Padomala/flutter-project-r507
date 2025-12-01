@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import './audio_provider.dart';
 import './vibration_provider.dart';
-import './userProvider.dart';
+import 'user_provider.dart';
 
 class AppProviders extends StatelessWidget {
   final Widget child;

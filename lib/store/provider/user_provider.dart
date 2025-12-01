@@ -4,7 +4,7 @@ import '../model/user.dart';
 class UserProvider with ChangeNotifier {
   UserModel? _user;
 
-  UserProvider(){
+  UserProvider() {
     print("UserProvider initialized!"); // Print when the provider is created
     _user = testUser;
   }
@@ -21,7 +21,3 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
   }
 }
-
-
-
-

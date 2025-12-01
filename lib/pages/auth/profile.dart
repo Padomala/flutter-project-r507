@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../widget/molecules/text_field.dart';
+import '../../widget/atoms/atom_text_field.dart';
 import '../../app_colors.dart';
-import '../../widget/molcule_card.dart';
-import '../../widget/atom_background_page.dart';
+import '../../widget/atoms/atom_button.dart';
+import '../../widget/atoms/atom_background_page.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -105,7 +105,7 @@ class _ProfilePageState extends State<Profile> {
                     // Bouton Éditer / Enregistrer
                     SizedBox(
                       width: double.infinity,
-                      child: MoleculeCard(
+                      child: AtomButton(
                         label: _isEditing ? 'ENREGISTRER' : 'ÉDITER',
                         onPressed: () {
                           if (_isEditing) {
