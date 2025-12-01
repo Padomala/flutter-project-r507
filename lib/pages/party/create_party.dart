@@ -102,7 +102,7 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
 
                             AtomButton(
                               label: "Créer la partie",
-                              color: Color.fromARGB(255, 18, 184, 10),
+                              bgColor: Color.fromARGB(255, 18, 184, 10),
                               onPressed: () => {
                                 if (_formKey.currentState!.validate())
                                   {
@@ -117,7 +117,6 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
                                     ),
                                   },
                               },
-                              bgColor: Color.fromARGB(255, 18, 184, 10),
                             ),
 
                             // ---- VALIDATION BUTTON ----
