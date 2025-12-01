@@ -1,11 +1,44 @@
 import 'package:flutter/material.dart';
 import '../../widget/atoms/atom_text_field.dart';
+import 'package:game_v1/core/services/supabase_service.dart';
+import 'package:game_v1/pages/auth/register.dart';
+import 'package:game_v1/store/provider/user_provider.dart';
+import 'package:provider/provider.dart';
+
 import '../../app_colors.dart';
 import '../../widget/atoms/atom_button.dart';
 import '../../widget/atoms/atom_background_page.dart';
 
-class Login extends StatelessWidget {
+class Login extends StatefulWidget {
   const Login({super.key});
+
+  @override
+  State<Login> createState() => _LoginPageState();
+}
+
+
+class _LoginPageState extends State<Login> {
+  // get auth service
+  final supabaseService = SupabaseService();
+
+  // text controller
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  // login button pressed
+  void onPressedLogin() async {
+    try {
+      await context.read<UserProvider>().login(
+        email: _emailController.text, 
+        password: _passwordController.text
+      );
+      Navigator.pop(context, "/profile");
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login failed: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +88,7 @@ class Login extends StatelessWidget {
                     const SizedBox(height: 20),
                     // Champ Email
                     CustomTextField(
+                      controller: _emailController,
                       label: "EMAIL",
                       hintText: "Entrez votre email",
                       icon: Icons.email,
@@ -63,6 +97,7 @@ class Login extends StatelessWidget {
                     const SizedBox(height: 15),
                     // Champ mot de passe
                     CustomTextField(
+                      controller: _passwordController,
                       label: "PASSWORD",
                       hintText: "Entrez votre mot de passe",
                       icon: Icons.password,
@@ -73,57 +108,59 @@ class Login extends StatelessWidget {
                     SizedBox(
                       child: AtomButton(
                         label: 'SE CONNECTER',
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/home_page');
-                        },
+                        onPressed: onPressedLogin,
                         bgColor: AppColors.blue,
                         width: 320,
                         height: 100,
                       ),
                     ),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context, "/register"),
+                      child: const Center(child: Text("Vous n'avez pas de compte ? Inscrivez-vous"),),
+                    )
 
-                    // Séparateur "Ou se connecter avec"
-                    const Row(
-                      children: [
-                        Expanded(child: Divider()),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text(
-                            'Ou se connecter avec',
-                            style: TextStyle(
-                              color: Colors.black54,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                        Expanded(child: Divider()),
-                      ],
-                    ),
+                    // // Séparateur "Ou se connecter avec"
+                    // const Row(
+                    //   children: [
+                    //     Expanded(child: Divider()),
+                    //     Padding(
+                    //       padding: EdgeInsets.symmetric(horizontal: 10),
+                    //       child: Text(
+                    //         'Ou se connecter avec',
+                    //         style: TextStyle(
+                    //           color: Colors.black54,
+                    //           fontSize: 14,
+                    //         ),
+                    //       ),
+                    //     ),
+                    //     Expanded(child: Divider()),
+                    //   ],
+                    // ),
 
-                    // Bouton Google
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          // Logique de connexion avec Google
-                        },
-                        icon: const Icon(
-                          Icons.g_mobiledata,
-                          color: AppColors.red,
-                        ),
-                        label: const Text(
-                          'Google',
-                          style: TextStyle(fontSize: 16, color: AppColors.red),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 15),
+                    // // Bouton Google
+                    // SizedBox(
+                    //   width: double.infinity,
+                    //   child: OutlinedButton.icon(
+                    //     onPressed: () {
+                    //       // Logique de connexion avec Google
+                    //     },
+                    //     icon: const Icon(
+                    //       Icons.g_mobiledata,
+                    //       color: AppColors.red,
+                    //     ),
+                    //     label: const Text(
+                    //       'Google',
+                    //       style: TextStyle(fontSize: 16, color: AppColors.red),
+                    //     ),
+                    //     style: OutlinedButton.styleFrom(
+                    //       padding: const EdgeInsets.symmetric(vertical: 12),
+                    //       shape: RoundedRectangleBorder(
+                    //         borderRadius: BorderRadius.circular(10),
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
+                    // const SizedBox(height: 15),
                   ],
                 ),
               ),

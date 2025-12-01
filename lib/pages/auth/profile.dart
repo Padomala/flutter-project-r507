@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widget/atoms/atom_text_field.dart';
+import 'package:provider/provider.dart'; // Import Provider
+import 'package:game_v1/store/provider/user_provider.dart'; // Import your UserProvider
 import '../../app_colors.dart';
 import '../../widget/atoms/atom_button.dart';
 import '../../widget/atoms/atom_background_page.dart';
@@ -13,16 +15,50 @@ class Profile extends StatefulWidget {
 
 class _ProfilePageState extends State<Profile> {
   bool _isEditing = false;
-  final TextEditingController _usernameController = TextEditingController(
-    text: "Utilisateur123",
-  );
-  final TextEditingController _emailController = TextEditingController(
-    text: "utilisateur@example.com",
-  );
+  late TextEditingController _usernameController;
+  late TextEditingController _emailController;
+
+  @override
+  void initState() {
+    super.initState();
+    _usernameController = TextEditingController();
+    _emailController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  /// Helper to handle Logout
+  void _onLogout() async {
+    try {
+      await context.read<UserProvider>().logout();
+      // No need to navigate manually; SupabaseGate will see the 
+      // session change and redirect to Login automatically.
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors de la déconnexion: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
+    
+    // 1. Listen to the UserProvider
+    final userProvider = context.watch<UserProvider>();
+    final user = userProvider.user;
+
+    // 2. Sync controllers with User Data (only if not currently editing)
+    // This ensures that when the page loads, the fields are filled.
+    if (!_isEditing) {
+      _usernameController.text = user.name;
+      _emailController.text = user.email;
+    }
 
     return Scaffold(
       body: Stack(
@@ -67,14 +103,22 @@ class _ProfilePageState extends State<Profile> {
                     const SizedBox(height: 20),
 
                     // Avatar
-                    const CircleAvatar(
+                    CircleAvatar(
                       radius: 50,
                       backgroundColor: Colors.white,
-                      child: Icon(Icons.person, size: 50, color: Colors.blue),
+                      // Display user avatar if available, else Icon
+                      backgroundImage: user.avatarUrl != null 
+                          ? NetworkImage(user.avatarUrl!) 
+                          : null,
+                      child: user.avatarUrl == null 
+                          ? const Icon(Icons.person, size: 50, color: Colors.blue) 
+                          : null,
                     ),
                     const SizedBox(height: 10),
+                    
+                    // Display Name (Read-only view at top)
                     Text(
-                      _usernameController.text,
+                      user.name.isEmpty ? 'Utilisateur' : user.name,
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -92,13 +136,17 @@ class _ProfilePageState extends State<Profile> {
                       enabled: _isEditing,
                     ),
                     const SizedBox(height: 15),
+                    
+                    // Email is usually read-only in Supabase unless you have a specific flow
+                    // So we might want to keep enabled: false even in edit mode, 
+                    // or handle email change separately. For now, I'll follow your edit logic.
                     CustomTextField(
                       label: "EMAIL",
                       hintText: "Entrez votre email",
                       icon: Icons.email,
                       fieldType: EnumFieldType.email,
                       controller: _emailController,
-                      enabled: _isEditing,
+                      enabled: false, // Usually better to not allow email edit here directly
                     ),
                     const SizedBox(height: 15),
 
@@ -109,17 +157,16 @@ class _ProfilePageState extends State<Profile> {
                         label: _isEditing ? 'ENREGISTRER' : 'ÉDITER',
                         onPressed: () {
                           if (_isEditing) {
-                            // Sauvegarder
+                            // TODO: Add logic to save changes to Supabase here
                             setState(() {
                               _isEditing = false;
                             });
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Modifications enregistrées !'),
+                                content: Text('Modifications locales enregistrées !'),
                               ),
                             );
                           } else {
-                            // Passer en mode édition
                             setState(() {
                               _isEditing = true;
                             });
@@ -130,9 +177,25 @@ class _ProfilePageState extends State<Profile> {
                         height: 80,
                       ),
                     ),
+                    
+                    const SizedBox(height: 15),
+
+                    // --- NEW: LOGOUT BUTTON ---
+                    SizedBox(
+                      width: double.infinity,
+                      child: AtomButton(
+                        label: 'SE DÉCONNECTER',
+                        onPressed: _onLogout,
+                        // Assuming you have a red color, otherwise use Colors.red
+                        bgColor: Colors.redAccent, 
+                        width: double.infinity,
+                        height: 60, // Slightly smaller than primary action
+                      ),
+                    ),
+
                     const SizedBox(height: 20),
 
-                    // Statistiques (optionnel, gardé pour cohérence)
+                    // Statistiques
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(15),
