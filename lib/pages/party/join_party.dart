@@ -41,17 +41,15 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: AtomTitle(
-          title: "Rejoindre une Partie",
-          color: Colors.blueAccent,
-        ),
-      ), // optionnel
       body: Stack(
         children: [
           BackgroundPage(pathBackground: "../../assets/images/carrefour.png"),
           Column(
             children: [
+              AtomTitle(
+                title: "Rejoindre une Partie",
+                color: Colors.blueAccent,
+              ),
               Expanded(
                 child: Center(
                   child: ConstrainedBox(
