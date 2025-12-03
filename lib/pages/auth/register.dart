@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:game_v1/store/provider/user_provider.dart';
+import 'package:provider/provider.dart';
 import '../../widget/atoms/atom_background_page.dart';
 import '../../widget/atoms/atom_text_field.dart';
 import 'package:game_v1/core/services/supabase_service.dart';
@@ -25,26 +27,25 @@ class _RegisterPageState extends State<Register> {
 
   // login button pressed
   void register() async {
-    // prepare data
-    final email = _emailController.text;
-    final password = _passwordController.text;
-    final passwordConfirm = _passwordConfirmController.text;
-
     // attempt login
-    if (password == passwordConfirm) {
+    if (_passwordController.text == _passwordConfirmController.text) {
       try {
-        await supabaseService.signIn(email, password);
-      }
-      catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("Error: $e")));
-        }
+        await context.read<UserProvider>().register(
+          email: _emailController.text, 
+          password: _passwordController.text
+        );
+        Navigator.pop(context, "/profile");
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login failed: $e')),
+        );
       }
     } else {
       ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text("Les mot de passe doivent-être identique")));
     }
+  }
+  void onPressedLogin() async {
   }
 
   @override
