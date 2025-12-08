@@ -3,6 +3,7 @@ import 'package:game_v1/pages/shop/shop_page.dart';
 import 'pages/home_page.dart';
 
 import 'core/services/supabase_service.dart';
+import 'core/services/supabase_gate.dart';
 import 'pages/auth/login.dart';
 import 'pages/auth/register.dart';
 import 'pages/auth/profile.dart';
@@ -33,9 +34,10 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.white,
         fontFamily: 'Motley_Forces',
       ),
-      initialRoute: '/',
+      initialRoute: null,
+      home: const SupabaseGate(),
       routes: {
-        '/': (context) => HomePage(),
+        '/home': (context) => HomePage(),
         '/create_party': (context) => CreatePartyPage(),
         '/join_party': (context) => JoinPartyPage(),
         '/shop': (context) => ShopPage(),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:game_v1/pages/auth/login.dart';
 import 'package:game_v1/pages/auth/profile.dart';
+import 'package:game_v1/pages/home_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseGate extends StatelessWidget {
@@ -26,9 +27,9 @@ class SupabaseGate extends StatelessWidget {
         // 2. Vérifie la présence d'une session valide
         // Si authState est non nul ET la session à l'intérieur est non nulle
         if (authState != null && authState.session != null) {
-          return const Profile(); // Utilisateur connecté
+          return const HomePage(); // Utilisateur connecté
         } else {
-          return const Login(); // Utilisateur déconnecté ou session expirée
+          return const HomePage(); // Utilisateur déconnecté ou session expirée
         }
       },
     );

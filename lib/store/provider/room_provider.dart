@@ -88,8 +88,14 @@ class RoomProvider with ChangeNotifier {
         await _service.leaveRoom(_currentRoom!.id, userId);
       } catch (e) {
         debugPrint("Check leave room error: $e");
+        // We continue to unsubscribe even if backend fails
       }
     }
+    leaveLocalInfo();
+  }
+
+  /// Clears local room state (e.g., when kicked or room deleted)
+  void leaveLocalInfo() {
     _unsubscribeFromRoom();
     _currentRoom = null;
     _participants = [];
@@ -100,11 +106,15 @@ class RoomProvider with ChangeNotifier {
   Future<void> _refreshParticipants() async {
     if (_currentRoom == null) return;
     try {
+      print("Refreshing participants for room: ${_currentRoom!.id}");
       final data = await _service.getRoomParticipants(_currentRoom!.id);
+      print("Raw participants data: $data"); // DEBUG LOG
       _participants = data.map((e) => RoomParticipant.fromJson(e)).toList();
+      print("Participants refreshed: ${_participants.length} (Host found: ${_participants.any((p) => p.isHost)})"); // DEBUG
       notifyListeners();
-    } catch (e) {
-      debugPrint("Error refreshing participants: $e");
+    } catch (e, stack) {
+      print("Error refreshing participants: $e");
+      print(stack);
     }
   }
 
@@ -118,9 +128,13 @@ class RoomProvider with ChangeNotifier {
         // Someone joined or left
         _refreshParticipants();
       } else if (payload.table == 'rooms') {
-        // Room status changed (e.g. playing)
+        // Room status changed or Room Deleted
        if (payload.eventType == PostgresChangeEvent.update) {
          _refreshRoom();
+       } else if (payload.eventType == PostgresChangeEvent.delete) {
+         // Room was deleted (Host left)
+         print("Room deleted event received. Clearing local info.");
+         leaveLocalInfo();
        }
       }
     });

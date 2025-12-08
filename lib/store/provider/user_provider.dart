@@ -7,7 +7,7 @@ class UserProvider with ChangeNotifier {
   final SupabaseService _authService = SupabaseService();
 
 
-  UserProvider() : _currentUser = const UserModel.guest();
+  UserProvider() : _currentUser = const UserModel(id: '', name: '', email: '', isConnected: false);
 
   UserModel _currentUser;
   bool _isConnecting = false;
@@ -51,13 +51,13 @@ class UserProvider with ChangeNotifier {
           isConnected: true,
         );
       } else {
-        // If response was weirdly empty, treat as guest
-        _currentUser = const UserModel.guest();
+        // Log explicitly if auth failed
+        debugPrint("Auth failed: No user returned");
+        _currentUser = const UserModel(id: '', name: '', email: '', isConnected: false);
       }
     } catch (e) {
-      // 4. On error, ensure we are reset to guest and rethrow 
-      // so the UI knows something went wrong (e.g. show Snackbar)
-      _currentUser = const UserModel.guest();
+      // 4. On error, ensure we are reset to disconnected
+      _currentUser = const UserModel(id: '', name: '', email: '', isConnected: false);
       rethrow; 
     } finally {
       // 5. Always stop loading and notify UI
@@ -70,10 +70,11 @@ class UserProvider with ChangeNotifier {
   Future<void> register({
     required String email,
     required String password,
+    String? username,
   }) async {
     _setConnecting(true);
     try {
-      final response = await _authService.signUp(email, password);
+      final response = await _authService.signUp(email, password, username: username);
       
       final authUser = response.user;
       
@@ -82,11 +83,38 @@ class UserProvider with ChangeNotifier {
         // or ask them to verify email. For now, let's log them in locally.
         _currentUser = UserModel(
           id: authUser.id,
-          name: authUser.email ?? 'New User',
+          name: username ?? authUser.email ?? 'New User',
           email: authUser.email ?? '',
           isConnected: true,
         );
       }
+    } catch (e) {
+      rethrow;
+    } finally {
+      _setConnecting(false);
+      notifyListeners();
+    }
+  }
+
+  /// Updates user profile
+  Future<void> updateProfile({String? username, String? avatarUrl}) async {
+    final userId = _currentUser.id;
+    if (userId.isEmpty || userId == 'guest') return;
+
+    _setConnecting(true);
+    try {
+      await _authService.updateProfile(userId, username: username, avatarUrl: avatarUrl);
+      
+      // Update local state
+      var updatedUser = _currentUser;
+      if (username != null) {
+        updatedUser = updatedUser.copyWith(name: username);
+      }
+      if (avatarUrl != null) {
+        updatedUser = updatedUser.copyWith(avatarUrl: avatarUrl);
+      }
+      _currentUser = updatedUser;
+
     } catch (e) {
       rethrow;
     } finally {
@@ -104,7 +132,7 @@ class UserProvider with ChangeNotifier {
       // Even if Supabase errors out, we want to clear local state
       debugPrint("Error signing out: $e");
     } finally {
-      _currentUser = const UserModel.guest();
+      _currentUser = const UserModel(id: '', name: '', email: '', isConnected: false);
       _setConnecting(false);
       notifyListeners();
     }

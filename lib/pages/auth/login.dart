@@ -29,9 +29,12 @@ class _LoginPageState extends State<Login> {
   void onPressedLogin() async {
     try {
       await context.read<UserProvider>().login(
-        email: _emailController.text, 
+        email: _emailController.text.trim(), 
         password: _passwordController.text
       );
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/profile');
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Login failed: $e')),
@@ -50,6 +53,16 @@ class _LoginPageState extends State<Login> {
           // Image de fond
           BackgroundPage(
             pathBackground: '../../assets/images/voiture_rouge.png',
+          ),
+
+          // Back Button
+          Positioned(
+            top: 40,
+            left: 20,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
+              onPressed: () => Navigator.pushNamed(context, '/home'),
+            ),
           ),
 
           // Contenu principal
@@ -113,10 +126,17 @@ class _LoginPageState extends State<Login> {
                         height: 100,
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context, "/register"),
-                      child: const Center(child: Text("Vous n'avez pas de compte ? Inscrivez-vous"),),
-                    )
+                    const SizedBox(height: 15),
+                    TextButton(
+                      onPressed: () => Navigator.pushNamed(context, '/register'), // Retourne à Login
+                      child: const Text(
+                        'Vous n\'avez pas de compte ? Inscrivez-vous',
+                        style: TextStyle(
+                          color: AppColors.blue,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
 
                     // // Séparateur "Ou se connecter avec"
                     // const Row(

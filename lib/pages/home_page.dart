@@ -57,7 +57,12 @@ class HomePage extends StatelessWidget {
                       AtomButton(
                         label: 'CRÉER UNE PARTIE',
                         onPressed: () {
-                          Navigator.pushNamed(context, '/create_party');
+                          final userProvider = context.read<UserProvider>();
+                          if (userProvider.isConnected) {
+                            Navigator.pushNamed(context, '/create_party');
+                          } else {
+                             Navigator.pushNamed(context, '/login');
+                          }
                         },
                         bgColor: Colors.redAccent,
                         width: 320,
@@ -67,7 +72,12 @@ class HomePage extends StatelessWidget {
                       AtomButton(
                         label: 'REJOINDRE UNE PARTIE',
                         onPressed: () {
-                          Navigator.pushNamed(context, '/join_party');
+                           final userProvider = context.read<UserProvider>();
+                          if (userProvider.isConnected) {
+                            Navigator.pushNamed(context, '/join_party');
+                          } else {
+                            Navigator.pushNamed(context, '/login');
+                          }
                         },
                         bgColor: Colors.blueAccent,
                         width: 320,

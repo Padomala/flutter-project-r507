@@ -18,17 +18,17 @@ class Register extends StatefulWidget {
 class _RegisterPageState extends State<Register> {
   // text controller
   final _emailController = TextEditingController();
+  final _pseudoController = TextEditingController();
   final _passwordController = TextEditingController();
   final _passwordConfirmController = TextEditingController();
   
   // Pour gérer l'état de chargement
   bool _isLoading = false;
-  
-  // Supprimer la variable inutilisée : final supabaseService = SupabaseService();
 
   @override
   void dispose() {
     _emailController.dispose();
+    _pseudoController.dispose();
     _passwordController.dispose();
     _passwordConfirmController.dispose();
     super.dispose();
@@ -39,6 +39,16 @@ class _RegisterPageState extends State<Register> {
   void register() async {
     if (_isLoading) return;
     
+    final email = _emailController.text.trim();
+    final RegExp emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+
+    if (!emailRegex.hasMatch(email)) {
+       ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Format d'email invalide (ex: exemple@mail.com)")),
+      );
+      return;
+    }
+
     // 1. Validation du mot de passe
     if (_passwordController.text != _passwordConfirmController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -54,12 +64,31 @@ class _RegisterPageState extends State<Register> {
     try {
       // 2. Appel de la logique d'inscription dans le Provider
       await context.read<UserProvider>().register(
-        email: _emailController.text, 
-        password: _passwordController.text
+        email: email, 
+        password: _passwordController.text,
+        username: _pseudoController.text.trim(),
       );
-      
-      // *** POINT CLÉ CORRIGÉ : AUCUNE NAVIGATION MANUELLE ICI ***
-      // L'inscription réussit, la SupabaseGate navigue vers Profile.
+      // 3. Show confirmation dialog
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            title: const Text("Inscription réussie"),
+            content: const Text(
+                "Votre compte a été créé ! \nUn email de confirmation vous a été envoyé. Veuillez l'activer avant de vous connecter."),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx); // Close dialog
+                  Navigator.pop(context); // Go back to Login
+                },
+                child: const Text("OK"),
+              ),
+            ],
+          ),
+        );
+      }
       
     } catch (e) {
       if (mounted) {
@@ -98,7 +127,7 @@ class _RegisterPageState extends State<Register> {
             left: 10,
             child: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pushNamed(context, '/home'),
             ),
           ),
           
@@ -134,6 +163,14 @@ class _RegisterPageState extends State<Register> {
                     ),
                     const SizedBox(height: 20),
 
+                    // Champ Pseudo
+                    CustomTextField(
+                      controller: _pseudoController,
+                      label: "PSEUDO",
+                      hintText: "Choisissez un pseudo",
+                      icon: Icons.person,
+                    ),
+
                     // Champ Email (J'ai conservé l'ordre de votre composant original,
                     // mais l'email et le mot de passe sont les champs obligatoires pour Supabase)
                     CustomTextField(
@@ -141,7 +178,7 @@ class _RegisterPageState extends State<Register> {
                       label: "EMAIL",
                       hintText: "Entrez votre mail",
                       icon: Icons.mail,
-                      // fieldType: EnumFieldType.email,
+                      fieldType: EnumFieldType.email,
                     ),
 
                     // Champ Mot de passe
@@ -150,7 +187,7 @@ class _RegisterPageState extends State<Register> {
                       label: "MOT DE PASSE",
                       hintText: "Entrez votre mot de passe",
                       icon: Icons.lock,
-                      // fieldType: EnumFieldType.password,
+                      fieldType: EnumFieldType.password,
                       // isObscure: true,
                     ),
 
@@ -160,7 +197,7 @@ class _RegisterPageState extends State<Register> {
                       label: "CONFIRMER MOT DE PASSE",
                       hintText: "Confirmez votre mot de passe",
                       icon: Icons.lock,
-                      // fieldType: EnumFieldType.password,
+                      fieldType: EnumFieldType.password,
                       // isObscure: true,
                     ),
                     
@@ -185,7 +222,7 @@ class _RegisterPageState extends State<Register> {
 
                     // Lien vers la page de connexion
                     TextButton(
-                      onPressed: () => Navigator.pop(context), // Retourne à Login
+                      onPressed: () => Navigator.pushNamed(context, '/login'), // Retourne à Login
                       child: const Text(
                         'Déjà un compte ? Se connecter',
                         style: TextStyle(

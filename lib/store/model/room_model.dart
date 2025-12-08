@@ -45,17 +45,26 @@ class RoomParticipant {
   });
 
   factory RoomParticipant.fromJson(Map<String, dynamic> json) {
-    // Note: This assumes we might join with a profiles table or have data in metadata
-    // Adjust based on actual data structure returned by Supabase
+    // Safe parsing for profiles (can be Map or List depending on Supabase version/relation detection)
+    final profileData = json['profiles'];
+    String? pseudoVar = 'Unknown';
+    String? avatarUrlVar;
+
+    if (profileData is Map) {
+      pseudoVar = profileData['username'];
+      avatarUrlVar = profileData['avatar_url'];
+    } else if (profileData is List && profileData.isNotEmpty) {
+      pseudoVar = profileData[0]['username'];
+      avatarUrlVar = profileData[0]['avatar_url'];
+    }
+
     return RoomParticipant(
       id: json['user_id'],
       roomId: json['room_id'],
       isHost: json['is_host'] ?? false,
-      joinedAt: DateTime.parse(json['joined_at']),
-      // If we join with profiles, we might have these fields. 
-      // For now we might need to fetch them separately or they might be null
-      pseudo: json['profiles']?['username'] ?? 'Unknown', 
-      avatarUrl: json['profiles']?['avatar_url'],
+      joinedAt: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()), 
+      pseudo: pseudoVar ?? 'Unknown', 
+      avatarUrl: avatarUrlVar,
     );
   }
 }

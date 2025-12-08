@@ -49,13 +49,38 @@ class SupabaseService {
 
 
   // SIGN UP
-  Future<AuthResponse> signUp(String email, String password) async {
+  Future<AuthResponse> signUp(String email, String password, {String? username}) async {
+    print("DEBUG SIGNUP - Email: '$email' (len: ${email.length}), Password: '$password', Username: '$username'");
     return await _supabase.auth.signUp(
       email: email,
-      password: password
+      password: password,
+      data: username != null ? {'name': username} : null, // Sending metadata
       );
   }
 
+
+  // UPDATE PROFILE
+  Future<void> updateProfile(String userId, {String? username, String? avatarUrl}) async {
+    final updates = <String, dynamic>{};
+    if (username != null) updates['username'] = username;
+    if (avatarUrl != null) updates['avatar_url'] = avatarUrl; // Save path or URL
+
+    if (updates.isNotEmpty) {
+      // Update public profile
+      await _supabase.from('profiles').update(updates).eq('id', userId);
+
+      // Optionally update auth metadata if name or avatar changed
+      final metadataUpdates = <String, dynamic>{};
+      if (username != null) metadataUpdates['name'] = username;
+      if (avatarUrl != null) metadataUpdates['avatar_url'] = avatarUrl;
+      
+      if (metadataUpdates.isNotEmpty) {
+        await _supabase.auth.updateUser(
+          UserAttributes(data: metadataUpdates),
+        );
+      }
+    }
+  }
 
   // SIGN OUT
   Future<void> signOut() async {
@@ -142,14 +167,28 @@ class SupabaseService {
 
   /// Leaves a room
   Future<void> leaveRoom(String roomId, String userId) async {
-    await _supabase
+    // Check if I am host before deleting my row
+    final participant = await _supabase
         .from('room_participants')
-        .delete()
+        .select()
         .eq('room_id', roomId)
-        .eq('user_id', userId);
-    
-    // Check if room is empty, delete it? Or if host left, assign new host?
-    // For now, let's keep it simple.
+        .eq('user_id', userId)
+        .maybeSingle();
+
+    if (participant != null) {
+      final bool isHost = participant['is_host'] ?? false;
+      
+      await _supabase
+          .from('room_participants')
+          .delete()
+          .eq('room_id', roomId)
+          .eq('user_id', userId);
+
+      // If host left, delete the room entirely
+      if (isHost) {
+        await _supabase.from('rooms').delete().eq('id', roomId);
+      }
+    }
   }
   
   /// Start the game (Host only)
@@ -166,7 +205,7 @@ class SupabaseService {
     // For this step, I'll fetch room_participants.
     final response = await _supabase
         .from('room_participants')
-        .select() 
+        .select('*, profiles(*)') 
         .eq('room_id', roomId);
     return List<Map<String, dynamic>>.from(response);
   }

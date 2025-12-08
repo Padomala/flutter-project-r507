@@ -17,14 +17,17 @@ class RoomHub extends StatefulWidget {
 
 class _RoomHubState extends State<RoomHub> {
   
+  int _previousParticipantCount = 0;
+
   @override
   void initState() {
     super.initState();
+    final roomProvider = context.read<RoomProvider>();
+    _previousParticipantCount = roomProvider.participants.length;
+
     // Use addPostFrameCallback to safely check state after build
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final roomProvider = context.read<RoomProvider>();
       if (roomProvider.currentRoom == null) {
-        // Should not happen if flow is correct, but let's handle it
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Erreur: Aucune room active.')),
@@ -37,13 +40,17 @@ class _RoomHubState extends State<RoomHub> {
     try {
       await context.read<RoomProvider>().startGame();
     } catch (e) {
-       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur lancement: $e')),
-        );
+       if (mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erreur lancement: $e')),
+          );
+       }
     }
   }
 
   void _leaveRoom() async {
+    // If I am host, we might want to warn or delete room.
+    // For now, standard leave.
     await context.read<RoomProvider>().leaveRoom();
     if (!mounted) return;
     Navigator.pop(context);
@@ -54,25 +61,58 @@ class _RoomHubState extends State<RoomHub> {
     // Listen to provider changes
     final roomProvider = context.watch<RoomProvider>();
     final room = roomProvider.currentRoom;
-    final players = roomProvider.participants; // These are RoomParticipant objects
+    final players = roomProvider.participants; 
     final amIHost = roomProvider.amIHost;
+
+    // --- LOGIC: HANDLE DEPARTURES ---
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+       if (!mounted) return;
+       // 1. Guest detects Host left
+       if (!amIHost) {
+          final bool hasHost = players.any((p) => p.isHost);
+          // If no host is found (list empty or host left), we must exit
+          if (!hasHost) {
+              context.read<RoomProvider>().leaveLocalInfo(); 
+              Navigator.popUntil(context, (route) => route.isFirst || route.settings.name == '/home');
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("L'hôte a quitté la partie. La room est fermée."),
+                  backgroundColor: Colors.red,
+                  duration: Duration(seconds: 4),
+                ),
+              );
+              return;
+          }
+       }
+
+       // 2. Host detects Guest left (Notification only)
+       if (players.length < _previousParticipantCount) {
+         ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Un joueur a quitté la partie."),
+              backgroundColor: Colors.orange,
+            )
+         );
+       }
+       // Update counter for next frame
+       _previousParticipantCount = players.length;
+    });
     
     // Check if game started
     if (room != null && room.status == 'playing') {
-       // Navigate to game!
-       // Since we are in build, use a microtask or just return a different widget
-       // Better to use a listener or just pushReplacement here.
-       // For now, let's just show a text "GAME STARTED".
-       // In real app: Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => GameScreen()));
+       // ... existing game start logic ...
     }
 
     // Convert RoomParticipant to AtomHub Player model if needed, or update AtomHub to use RoomParticipant.
     // AtomHub expects List<Player>. Let's map.
     final atomPlayers = players.map((p) => Player(
-      pseudo: p.pseudo ?? (p.id == room?.hostId ? 'Host' : 'Joueur'),
+      pseudo: p.pseudo ?? (p.isHost ? 'Host' : 'Joueur'),
       avatarUrl: p.avatarUrl ?? "https://placehold.co/100x100/18B80A/FFFFFF?text=${p.id.substring(0,2)}",
       isHost: p.isHost,
     )).toList();
+
+    // afficher atomPlayers
+    // debugPrint(atomPlayers.toString());
 
     final int nbGames = room?.settings?['nb_games'] ?? 0;
     final String roomCode = room?.code ?? '??????';

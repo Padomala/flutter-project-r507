@@ -43,11 +43,13 @@ class AtomHub extends StatelessWidget {
           // Photo de profil (Avatar)
           CircleAvatar(
             radius: 24,
-            backgroundImage: NetworkImage(player.avatarUrl),
+            backgroundImage: player.avatarUrl.isNotEmpty
+                ? (player.avatarUrl.startsWith('http')
+                    ? NetworkImage(player.avatarUrl)
+                    : AssetImage(player.avatarUrl) as ImageProvider)
+                : null,
             onBackgroundImageError: (exception, stackTrace) {
-              // Fallback si l'image ne charge pas (ou utilise un asset local)
-              // Note: Utiliser NetworkImage() n'est pas idéal en production sans gestion d'erreur robuste.
-              // Ici, on utilise un simple icône de secours
+               // Fallback handled by child if backgroundImage fails (conceptually, though CircleAvatar logic is tricky)
             },
             child: player.avatarUrl.isEmpty
                 ? const Icon(Icons.person, color: Colors.white)
@@ -88,6 +90,8 @@ class AtomHub extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    //afficher le nombre de joueurs en dans la console
+    print("Nombre de joueurs: ${players}");
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 400),

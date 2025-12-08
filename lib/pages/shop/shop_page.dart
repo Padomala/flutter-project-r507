@@ -85,6 +85,16 @@ class ShopPage extends StatelessWidget {
                 ],
               ),
             ),
+            // Back Button
+            Positioned(
+              top: 40,
+              left: 20,
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+
           ],
         ),
       ),

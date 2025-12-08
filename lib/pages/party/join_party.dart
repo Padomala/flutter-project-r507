@@ -63,6 +63,16 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
       body: Stack(
         children: [
           const BackgroundPage(pathBackground: "assets/images/carrefour.png"), // corrected path
+          
+          // Back Button
+          Positioned(
+            top: 40,
+            left: 20,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
           Column(
             children: [
               const AtomTitle(

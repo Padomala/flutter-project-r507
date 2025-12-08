@@ -18,6 +18,23 @@ class _ProfilePageState extends State<Profile> {
   late TextEditingController _usernameController;
   late TextEditingController _emailController;
 
+  String? _selectedAvatarUrl;
+
+  final List<String> _avatarAssets = [
+    'images/avatars/cat1.jpg',
+    'images/avatars/cat2.jpg',
+    'images/avatars/cat3.jpg',
+    'images/avatars/cat4.jpg',
+    'images/avatars/dog1.jpg',
+    'images/avatars/dog2.jpg',
+    'images/avatars/dog3.jpg',
+    'images/avatars/dog4.jpg',
+    'images/avatars/rab1.jpg',
+    'images/avatars/rab2.jpg',
+    'images/avatars/rab3.jpg',
+    'images/avatars/rab4.jpg',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -36,8 +53,10 @@ class _ProfilePageState extends State<Profile> {
   void _onLogout() async {
     try {
       await context.read<UserProvider>().logout();
-      // No need to navigate manually; SupabaseGate will see the 
-      // session change and redirect to Login automatically.
+      if (mounted) {
+         // Pop everything until the first route (ROOT), which is SupabaseGate -> HomePage
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erreur lors de la déconnexion: $e')),
@@ -54,10 +73,23 @@ class _ProfilePageState extends State<Profile> {
     final user = userProvider.user;
 
     // 2. Sync controllers with User Data (only if not currently editing)
-    // This ensures that when the page loads, the fields are filled.
     if (!_isEditing) {
       _usernameController.text = user.name;
       _emailController.text = user.email;
+      // Also sync selected avatar only if we haven't selected a new one yet?
+      // Actually, when entering edit mode, we want to start with current avatar.
+    }
+    
+    // Determine which image to show in the big circle
+    // If editing and user picked one, show that. Else show user's current.
+    final displayAvatarUrl = (_isEditing && _selectedAvatarUrl != null) 
+        ? _selectedAvatarUrl 
+        : user.avatarUrl;
+
+    ImageProvider? getAvatarImage(String? url) {
+      if (url == null || url.isEmpty) return null;
+      if (url.startsWith('http')) return NetworkImage(url);
+      return AssetImage(url);
     }
 
     return Scaffold(
@@ -67,6 +99,7 @@ class _ProfilePageState extends State<Profile> {
           const BackgroundPage(
             pathBackground: '../../assets/images/voiture_rouge.png',
           ),
+
           Center(
             child: SingleChildScrollView(
               child: Container(
@@ -106,11 +139,8 @@ class _ProfilePageState extends State<Profile> {
                     CircleAvatar(
                       radius: 50,
                       backgroundColor: Colors.white,
-                      // Display user avatar if available, else Icon
-                      backgroundImage: user.avatarUrl != null 
-                          ? NetworkImage(user.avatarUrl!) 
-                          : null,
-                      child: user.avatarUrl == null 
+                      backgroundImage: getAvatarImage(displayAvatarUrl),
+                      child: displayAvatarUrl == null 
                           ? const Icon(Icons.person, size: 50, color: Colors.blue) 
                           : null,
                     ),
@@ -127,6 +157,48 @@ class _ProfilePageState extends State<Profile> {
                     ),
                     const SizedBox(height: 20),
 
+                    // --- AVATAR SELECTOR (Visible only in Edit Mode) ---
+                    if (_isEditing) ...[
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text("Choisir un avatar :", style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        height: 70,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _avatarAssets.length,
+                          itemBuilder: (context, index) {
+                            final path = _avatarAssets[index];
+                            final isSelected = (_selectedAvatarUrl == path) || 
+                                              (_selectedAvatarUrl == null && user.avatarUrl == path);
+                            
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedAvatarUrl = path;
+                                });
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.only(right: 12),
+                                padding: const EdgeInsets.all(2), // border width
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: isSelected ? Border.all(color: Colors.blue, width: 3) : null,
+                                ),
+                                child: CircleAvatar(
+                                  radius: 30,
+                                  backgroundImage: AssetImage(path),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+
                     // Champs modifiables
                     CustomTextField(
                       label: "NOM D'UTILISATEUR",
@@ -137,16 +209,14 @@ class _ProfilePageState extends State<Profile> {
                     ),
                     const SizedBox(height: 15),
                     
-                    // Email is usually read-only in Supabase unless you have a specific flow
-                    // So we might want to keep enabled: false even in edit mode, 
-                    // or handle email change separately. For now, I'll follow your edit logic.
+                    // Email is usually read-only
                     CustomTextField(
                       label: "EMAIL",
                       hintText: "Entrez votre email",
                       icon: Icons.email,
                       fieldType: EnumFieldType.email,
                       controller: _emailController,
-                      enabled: false, // Usually better to not allow email edit here directly
+                      enabled: false, 
                     ),
                     const SizedBox(height: 15),
 
@@ -155,17 +225,36 @@ class _ProfilePageState extends State<Profile> {
                       width: double.infinity,
                       child: AtomButton(
                         label: _isEditing ? 'ENREGISTRER' : 'ÉDITER',
-                        onPressed: () {
+                        onPressed: () async {
                           if (_isEditing) {
-                            // TODO: Add logic to save changes to Supabase here
-                            setState(() {
-                              _isEditing = false;
-                            });
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Modifications locales enregistrées !'),
-                              ),
-                            );
+                            try {
+                              await context.read<UserProvider>().updateProfile(
+                                username: _usernameController.text.trim(),
+                                avatarUrl: _selectedAvatarUrl, // Pass selected avatar
+                              );
+                              
+                              if (context.mounted) {
+                                setState(() {
+                                  _isEditing = false;
+                                  _selectedAvatarUrl = null; // Reset selection
+                                });
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Modifications enregistrées !'),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Erreur : $e'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            }
                           } else {
                             setState(() {
                               _isEditing = true;
@@ -267,6 +356,20 @@ class _ProfilePageState extends State<Profile> {
                   ],
                 ),
               ),
+            ),
+          ),
+          
+          // Back Button (Moved to end for Z-Index)
+          Positioned(
+            top: 60,
+            left: 40,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
+              // Ensure we have a background circle so it's visible over any content
+               style: IconButton.styleFrom(
+                backgroundColor: Colors.black26, 
+              ),
+              onPressed: () => Navigator.pushNamed(context, '/home'),
             ),
           ),
         ],

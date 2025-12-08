@@ -52,6 +52,16 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
         children: [
           // Assure-toi que le chemin est correct et accessible
           const BackgroundPage(pathBackground: "assets/images/carrefour.png"),
+          
+          // Back Button
+          Positioned(
+            top: 40,
+            left: 20,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
           Column(
             children: [
               const AtomTitle(

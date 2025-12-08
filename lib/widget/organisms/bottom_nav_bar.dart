@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../store/provider/user_provider.dart';
 
 class BottomNavBar extends StatelessWidget {
   const BottomNavBar({super.key});
@@ -20,7 +22,13 @@ class BottomNavBar extends StatelessWidget {
           children: [
             IconButton(
               onPressed: () {
-                Navigator.pushNamed(context, '/profile');
+                final userProvider = context.read<UserProvider>();
+                if (userProvider.isConnected) {
+                  Navigator.pushNamed(context, '/profile');
+                } else {
+                  // User requested explicitly: Go to Register if not connected when clicking Profile
+                  Navigator.pushNamed(context, '/register'); 
+                }
               },
               icon: Icon(Icons.person, color: Colors.white, size: 28),
               tooltip: 'Profil',
