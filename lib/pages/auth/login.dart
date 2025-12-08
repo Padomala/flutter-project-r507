@@ -32,7 +32,6 @@ class _LoginPageState extends State<Login> {
         email: _emailController.text, 
         password: _passwordController.text
       );
-      Navigator.pop(context, "/profile");
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Login failed: $e')),

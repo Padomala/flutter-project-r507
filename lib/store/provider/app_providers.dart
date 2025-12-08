@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import './audio_provider.dart';
 import './vibration_provider.dart';
 import 'user_provider.dart';
+import 'room_provider.dart';
 
 class AppProviders extends StatelessWidget {
   final Widget child;
@@ -16,6 +17,7 @@ class AppProviders extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => AudioProvider()),
         ChangeNotifierProvider(create: (_) => VibrationProvider()),
+        ChangeNotifierProvider(create: (_) => RoomProvider()),
       ],
       child: child,
     );

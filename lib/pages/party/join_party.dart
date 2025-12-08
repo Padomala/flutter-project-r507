@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:game_v1/widget/atoms/atom_button.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:game_v1/pages/party/room_hub.dart';
 import 'package:game_v1/widget/atoms/atom_button.dart';
 import '../../widget/atoms/atom_title_page.dart';
-import 'package:flutter/services.dart';
 import '../../widget/atoms/atom_background_page.dart';
+import '../../store/provider/room_provider.dart';
 
 class JoinPartyPage extends StatefulWidget {
   const JoinPartyPage({super.key});
@@ -22,19 +24,36 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
     super.dispose();
   }
 
-  void _onValidate() {
+  void _joinParty() async {
     if (_formKey.currentState?.validate() ?? false) {
       final code = _controller.text;
-      // Ici : appelle ton backend ou fais la navigation
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Code soumis : $code')));
+      final scaffoldMessenger = ScaffoldMessenger.of(context);
+      
+      scaffoldMessenger.showSnackBar(SnackBar(content: Text('Tentative de connexion à la room $code...')));
+      
+      try {
+        await context.read<RoomProvider>().joinRoom(code);
+        
+        if (!mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const RoomHub(),
+          ),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        scaffoldMessenger.showSnackBar(
+           SnackBar(content: Text('Erreur: Impossible de rejoindre la room. $e')),
+        );
+      }
     }
   }
 
   String? _validator(String? value) {
     if (value == null || value.trim().isEmpty) return 'Champ requis';
-    if (value.length != 6) return 'Le code doit comporter 6 chiffres';
+    // if (value.length != 6) return 'Le code doit comporter 6 chiffres'; 
+    // Relaxed validation as we might generate strings
     return null;
   }
 
@@ -43,17 +62,17 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
     return Scaffold(
       body: Stack(
         children: [
-          BackgroundPage(pathBackground: "../../assets/images/carrefour.png"),
+          const BackgroundPage(pathBackground: "assets/images/carrefour.png"), // corrected path
           Column(
             children: [
-              AtomTitle(
+              const AtomTitle(
                 title: "Rejoindre une Partie",
                 color: Colors.blueAccent,
               ),
               Expanded(
                 child: Center(
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: 320),
+                    constraints: const BoxConstraints(maxWidth: 320),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       // FORMULAIARE START
@@ -65,11 +84,11 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
                             Align(
                               alignment: Alignment.centerLeft,
                               child: Padding(
-                                padding: EdgeInsets.all(6),
+                                padding: const EdgeInsets.all(6),
                                 child: Container(
-                                  padding: EdgeInsets.all(8), // padding interne
+                                  padding: const EdgeInsets.all(8), // padding interne
                                   decoration: BoxDecoration(
-                                    color: Color.fromARGB(100, 0, 0, 0),
+                                    color: const Color.fromARGB(100, 0, 0, 0),
                                     borderRadius: BorderRadius.circular(
                                       8,
                                     ), // radius
@@ -86,9 +105,7 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
                                 ),
                               ),
                             ),
-                            // SizedBox(height: 8),
-
-                            // Ton TextFormField
+                            
                             TextFormField(
                               controller: _controller,
                               keyboardType: TextInputType.number,
@@ -100,23 +117,23 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
                                 hintText: '______',
                                 filled: true,
                                 fillColor: Colors.white,
-                                contentPadding: EdgeInsets.symmetric(
+                                contentPadding: const EdgeInsets.symmetric(
                                   vertical: 20,
                                   horizontal: 16,
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: Colors.grey),
+                                  borderSide: const BorderSide(color: Colors.grey),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
+                                  borderSide: const BorderSide(
                                     color: Colors.blue,
                                     width: 6,
                                   ),
                                 ),
                               ),
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 32,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 25,
@@ -124,32 +141,13 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
                               validator: _validator,
                             ),
 
-                            SizedBox(height: 16),
+                            const SizedBox(height: 16),
 
                             AtomButton(
                               label: "Rejoindre la partie",
-                              onPressed: () => {
-                                if (_formKey.currentState!.validate())
-                                  {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Processing Data'),
-                                      ),
-                                    ),
-                                  },
-                              },
-                              bgColor: Color.fromARGB(255, 18, 184, 10),
+                              onPressed: _joinParty,
+                              bgColor: const Color.fromARGB(255, 18, 184, 10),
                             ),
-
-                            // MoleculeCard(
-                            //   label: "Rejoindre la partie",
-                            //   onPressed: () {
-                            //     Navigator.pushNamed(context, '');
-                            //   },
-                            //   bgColor: Color.fromARGB(255, 18, 184, 10),
-                            //   width: 320,
-                            //   height: 120,
-                            // ),
                           ],
                         ),
                       ),

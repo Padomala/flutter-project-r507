@@ -4,6 +4,8 @@ import 'package:game_v1/widget/atoms/atom_title_page.dart';
 import 'package:game_v1/widget/atoms/atom_background_page.dart';
 import 'package:game_v1/widget/atoms/atom_button.dart';
 import 'package:game_v1/widget/atoms/atom_number_picker.dart';
+import 'package:provider/provider.dart';
+import '../../store/provider/room_provider.dart';
 
 class CreatePartyPage extends StatefulWidget {
   const CreatePartyPage({super.key});
@@ -15,31 +17,32 @@ class CreatePartyPage extends StatefulWidget {
 class _CreatePartyPageState extends State<CreatePartyPage> {
   int _nbGames = 5;
 
-  // Préparation pour ta logique future (API / SQL)
   Future<void> _createParty() async {
-    // 1. Feedback visuel immédiat
-    ScaffoldMessenger.of(context).showSnackBar(
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
+    // Feedback visuel immédiat
+    scaffoldMessenger.showSnackBar(
       SnackBar(content: Text("Création de la partie avec $_nbGames mini-jeux...")),
     );
 
-    // TODO: Ici, insère ton appel à la base de données
-    // String roomCode = await api.generateRoomCode();
-    // await api.insertRoom(roomCode, _nbGames);
-
-    // Simulation d'un délai réseau (à retirer plus tard)
-    await Future.delayed(const Duration(milliseconds: 500)); 
-
-    if (!mounted) return; // Sécurité : on vérifie si la page est toujours là
-
-    // 2. Navigation vers la RoomHub
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => RoomHub(
-          nb: _nbGames,
+    try {
+      await context.read<RoomProvider>().createRoom(settings: {'nb_games': _nbGames});
+      
+      if (!mounted) return;
+      
+      // Navigation vers la RoomHub
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const RoomHub(), 
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      if (!mounted) return;
+      scaffoldMessenger.showSnackBar(
+        SnackBar(content: Text("Erreur lors de la création de la room: $e")),
+      );
+    }
   }
 
   @override
@@ -105,7 +108,7 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
                           AtomButton(
                             label: "Créer la partie",
                             bgColor: const Color.fromARGB(255, 18, 184, 10),
-                            onPressed: _createParty, // Appel direct de la fonction
+                            onPressed: _createParty, 
                           ),
                         ],
                       ),

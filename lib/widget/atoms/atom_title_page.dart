@@ -6,6 +6,7 @@ class AtomTitle extends StatelessWidget {
 
   final bool showBack;
   final VoidCallback? onSettings;
+  final VoidCallback? onBack;
 
   const AtomTitle({
     super.key,
@@ -13,6 +14,7 @@ class AtomTitle extends StatelessWidget {
     required this.color,
     this.showBack = true,
     this.onSettings,
+    this.onBack,
   });
 
   @override
@@ -53,7 +55,7 @@ class AtomTitle extends StatelessWidget {
                       Icons.arrow_back_ios_new,
                       color: Colors.white,
                     ),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: onBack ?? () => Navigator.pop(context),
                   )
                 else
                   const SizedBox(width: 48), // pour conserver l'alignement

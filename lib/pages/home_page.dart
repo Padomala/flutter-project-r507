@@ -83,7 +83,7 @@ class HomePage extends StatelessWidget {
           ),
           // Boutons de navigation inférieurs (barre fixe)
           const SettingsPopup(),
-
+          
           const BottomNavBar(),
         ],
       ),
