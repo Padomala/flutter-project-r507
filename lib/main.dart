@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:game_v1/pages/shop/shop_page.dart';
 import 'pages/home_page.dart';
 import 'package:provider/provider.dart';
-
 import 'core/services/supabase_service.dart';
 import 'pages/auth/login.dart';
 import 'pages/auth/register.dart';
@@ -12,14 +11,16 @@ import 'pages/party/create_party.dart';
 import 'pages/party/join_party.dart';
 import '../store/provider/app_providers.dart';
 import 'store/provider/user_provider.dart';
+import '../game/clues/game/ui/guessing_game_screen.dart';
+import '../game/clues/game/state/guessing_game_notifier.dart';
+
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();  //we just wait for initialization
-  await SupabaseService.initialize();         //we wait to get the url and mdp to connect
+  WidgetsFlutterBinding.ensureInitialized(); //we just wait for initialization
+  await SupabaseService.initialize(); //we wait to get the url and mdp to connect
 
   runApp(
-    MultiProvider(
-      providers: [ChangeNotifierProvider(create: (context) => UserProvider())],
+    const AppProviders(
       child: MyApp(),
     ),
   );
@@ -64,6 +65,10 @@ class MyApp extends StatelessWidget {
         // }
         // },
         '/register': (context) => Register(),
+        '/guessing_game': (context) => ChangeNotifierProvider(
+          create: (context) => GuessingGameNotifier(gameId: 'a1b2c3d4-0000-0000-0000-000000000000'), 
+          child: const GuessingGameScreen(gameId: 'a1b2c3d4-0000-0000-0000-000000000000'),
+        ),
       },
     );
   }
