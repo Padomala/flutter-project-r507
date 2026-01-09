@@ -57,6 +57,20 @@ class _RoomHubState extends State<RoomHub> {
   }
 
   @override
+  void dispose() {
+    // Ensure we leave the room when the page is disposed
+    // This handles cases where the user exits via system back button, etc.
+    final roomProvider = context.read<RoomProvider>();
+    if (roomProvider.currentRoom != null) {
+      // Call leaveRoom without awaiting to avoid blocking dispose
+      roomProvider.leaveRoom().catchError((e) {
+        debugPrint("Error leaving room on dispose: $e");
+      });
+    }
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     // Listen to provider changes
     final roomProvider = context.watch<RoomProvider>();
@@ -67,10 +81,25 @@ class _RoomHubState extends State<RoomHub> {
     // --- LOGIC: HANDLE DEPARTURES ---
     WidgetsBinding.instance.addPostFrameCallback((_) {
        if (!mounted) return;
-       // 1. Guest detects Host left
+       
+       // 1. Check if room was deleted (Host left)
+       if (room == null) {
+         // Room was deleted, navigate back
+         Navigator.popUntil(context, (route) => route.isFirst || route.settings.name == '/home');
+         ScaffoldMessenger.of(context).showSnackBar(
+           const SnackBar(
+             content: Text("L'hôte a quitté la partie. La room est fermée."),
+             backgroundColor: Colors.red,
+             duration: Duration(seconds: 4),
+           ),
+         );
+         return;
+       }
+
+       // 2. Guest detects Host left (if participants list doesn't contain host)
        if (!amIHost) {
           final bool hasHost = players.any((p) => p.isHost);
-          // If no host is found (list empty or host left), we must exit
+          // If no host is found, we must exit
           if (!hasHost) {
               context.read<RoomProvider>().leaveLocalInfo(); 
               Navigator.popUntil(context, (route) => route.isFirst || route.settings.name == '/home');
@@ -85,7 +114,7 @@ class _RoomHubState extends State<RoomHub> {
           }
        }
 
-       // 2. Host detects Guest left (Notification only)
+       // 3. Host detects Guest left (Notification only)
        if (players.length < _previousParticipantCount) {
          ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

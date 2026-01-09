@@ -10,8 +10,8 @@ class SettingsPopup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      top: 8,
-      right: 8,
+      top: 52,
+      right: 32,
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: GestureDetector(

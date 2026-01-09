@@ -145,7 +145,17 @@ class SupabaseService {
         .maybeSingle();
 
     if (existingParams == null) {
-       // 3. Add to participants
+      // 3. Check if room is full (max 2 players)
+      final currentParticipants = await _supabase
+          .from('room_participants')
+          .select()
+          .eq('room_id', roomId);
+      
+      if (currentParticipants.length >= 2) {
+        throw Exception('La room est pleine (maximum 2 joueurs)');
+      }
+
+      // 4. Add to participants
       await _supabase.from('room_participants').insert({
         'room_id': roomId,
         'user_id': userId,
@@ -213,6 +223,7 @@ class SupabaseService {
   /// Subscribe to room changes (participants joining/leaving, status changes)
   RealtimeChannel subscribeToRoom(String roomId, void Function(PostgresChangePayload) callback) {
     return _supabase.channel('public:rooms:$roomId')
+      // Listen to ALL changes on room_participants (INSERT, UPDATE, DELETE)
       .onPostgresChanges(
         event: PostgresChangeEvent.all,
         schema: 'public',
@@ -224,8 +235,20 @@ class SupabaseService {
         ),
         callback: callback,
       )
+      // Listen to UPDATE and DELETE on rooms table
       .onPostgresChanges(
         event: PostgresChangeEvent.update,
+        schema: 'public',
+        table: 'rooms',
+        filter: PostgresChangeFilter(
+          type: PostgresChangeFilterType.eq, 
+          column: 'id', 
+          value: roomId
+        ),
+        callback: callback,
+      )
+      .onPostgresChanges(
+        event: PostgresChangeEvent.delete,
         schema: 'public',
         table: 'rooms',
         filter: PostgresChangeFilter(
