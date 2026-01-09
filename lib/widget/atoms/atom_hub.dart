@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/utils/avatar_helper.dart';
 
 // Définition d'un modèle simple pour les données des joueurs
 class Player {
@@ -44,9 +45,7 @@ class AtomHub extends StatelessWidget {
           CircleAvatar(
             radius: 24,
             backgroundImage: player.avatarUrl.isNotEmpty
-                ? (player.avatarUrl.startsWith('http')
-                    ? NetworkImage(player.avatarUrl)
-                    : AssetImage(player.avatarUrl) as ImageProvider)
+                ? AvatarHelper.getAvatarImage(player.avatarUrl)
                 : null,
             onBackgroundImageError: (exception, stackTrace) {
                // Fallback handled by child if backgroundImage fails (conceptually, though CircleAvatar logic is tricky)

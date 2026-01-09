@@ -5,6 +5,7 @@ import 'package:game_v1/store/provider/user_provider.dart'; // Import your UserP
 import '../../app_colors.dart';
 import '../../widget/atoms/atom_button.dart';
 import '../../widget/atoms/atom_background_page.dart';
+import '../../core/utils/avatar_helper.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -86,12 +87,6 @@ class _ProfilePageState extends State<Profile> {
         ? _selectedAvatarUrl 
         : user.avatarUrl;
 
-    ImageProvider? getAvatarImage(String? url) {
-      if (url == null || url.isEmpty) return null;
-      if (url.startsWith('http')) return NetworkImage(url);
-      return AssetImage(url);
-    }
-
     return Scaffold(
       body: Stack(
         children: [
@@ -139,7 +134,7 @@ class _ProfilePageState extends State<Profile> {
                     CircleAvatar(
                       radius: 50,
                       backgroundColor: Colors.white,
-                      backgroundImage: getAvatarImage(displayAvatarUrl),
+                      backgroundImage: AvatarHelper.getAvatarImageOrNull(displayAvatarUrl),
                       child: displayAvatarUrl == null 
                           ? const Icon(Icons.person, size: 50, color: Colors.blue) 
                           : null,
@@ -189,7 +184,7 @@ class _ProfilePageState extends State<Profile> {
                                 ),
                                 child: CircleAvatar(
                                   radius: 30,
-                                  backgroundImage: AssetImage(path),
+                                  backgroundImage: AvatarHelper.getAvatarImage(path),
                                 ),
                               ),
                             );
