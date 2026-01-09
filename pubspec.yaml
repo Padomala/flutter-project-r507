@@ -28,9 +28,12 @@ flutter:
     - assets/fonts/
     - assets/audio/   
 
-  fonts:              # Required if your app uses custom fonts
+  fonts:
   - family: Motley_Forces
     fonts:
       - asset: assets/fonts/Motley_Forces.ttf
+  - family: AstroDotBasic
+    fonts:
+      - asset: assets/fonts/AstroDotBasic.ttf
 
 
