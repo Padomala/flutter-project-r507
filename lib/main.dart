@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:game_v1/pages/game/caesar_game_page.dart';
 import 'package:game_v1/pages/shop/shop_page.dart';
 import 'pages/home_page.dart';
 
@@ -62,6 +63,7 @@ class MyApp extends StatelessWidget {
         // }
         // },
         '/register': (context) => Register(),
+        '/game/caesar_game': (context) => CaesarGamePage(),
       },
     );
   }
