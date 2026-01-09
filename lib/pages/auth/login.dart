@@ -52,7 +52,7 @@ class _LoginPageState extends State<Login> {
         children: [
           // Image de fond
           BackgroundPage(
-            pathBackground: '../../assets/images/voiture_rouge.png',
+            pathBackground: 'assets/images/voiture_rouge.png',
           ),
 
           // Back Button

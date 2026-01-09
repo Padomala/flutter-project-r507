@@ -21,18 +21,18 @@ class _ProfilePageState extends State<Profile> {
   String? _selectedAvatarUrl;
 
   final List<String> _avatarAssets = [
-    'images/avatars/cat1.jpg',
-    'images/avatars/cat2.jpg',
-    'images/avatars/cat3.jpg',
-    'images/avatars/cat4.jpg',
-    'images/avatars/dog1.jpg',
-    'images/avatars/dog2.jpg',
-    'images/avatars/dog3.jpg',
-    'images/avatars/dog4.jpg',
-    'images/avatars/rab1.jpg',
-    'images/avatars/rab2.jpg',
-    'images/avatars/rab3.jpg',
-    'images/avatars/rab4.jpg',
+    'assets/images/avatars/cat1.jpg',
+    'assets/images/avatars/cat2.jpg',
+    'assets/images/avatars/cat3.jpg',
+    'assets/images/avatars/cat4.jpg',
+    'assets/images/avatars/dog1.jpg',
+    'assets/images/avatars/dog2.jpg',
+    'assets/images/avatars/dog3.jpg',
+    'assets/images/avatars/dog4.jpg',
+    'assets/images/avatars/rab1.jpg',
+    'assets/images/avatars/rab2.jpg',
+    'assets/images/avatars/rab3.jpg',
+    'assets/images/avatars/rab4.jpg',
   ];
 
   @override
@@ -97,7 +97,7 @@ class _ProfilePageState extends State<Profile> {
         children: [
           // Arrière-plan
           const BackgroundPage(
-            pathBackground: '../../assets/images/voiture_rouge.png',
+            pathBackground: 'assets/images/voiture_rouge.png',
           ),
 
           Center(

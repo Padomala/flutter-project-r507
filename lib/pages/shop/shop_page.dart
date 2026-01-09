@@ -18,7 +18,7 @@ class ShopPage extends StatelessWidget {
           children: [
             // Arrière-plan
             const BackgroundPage(
-              pathBackground: '../../assets/images/salon.png',
+              pathBackground: 'assets/images/salon.png',
             ),
 
             // Titre tout en haut

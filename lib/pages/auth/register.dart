@@ -118,7 +118,7 @@ class _RegisterPageState extends State<Register> {
         children: [
           // Image de fond
           BackgroundPage(
-            pathBackground: '../../assets/images/voiture_rouge.png',
+            pathBackground: 'assets/images/voiture_rouge.png',
           ),
           
           // Bouton de retour (si vous voulez permettre le retour à Login sans inscription)

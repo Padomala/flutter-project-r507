@@ -20,7 +20,7 @@ class HomePage extends StatelessWidget {
           // Image d'arrière-plan associée à la maquette
           Positioned.fill(
             child: Image.asset(
-              '../../assets/images/feu_vert.png',
+              'assets/images/feu_vert.png',
               fit: BoxFit.cover,
             ),
           ),
@@ -65,7 +65,7 @@ class HomePage extends StatelessWidget {
                           }
                         },
                         bgColor: Colors.redAccent,
-                        width: 320,
+                        width: double.infinity,
                         height: 120,
                       ),
                       SizedBox(height: cardSpacing),
@@ -80,7 +80,7 @@ class HomePage extends StatelessWidget {
                           }
                         },
                         bgColor: Colors.blueAccent,
-                        width: 320,
+                        width: double.infinity,
                         height: 120,
                       ),
                     ],
