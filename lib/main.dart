@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:game_v1/pages/game/caesar_game_page.dart';
 import 'package:game_v1/pages/shop/shop_page.dart';
 import 'pages/home_page.dart';
 import 'package:provider/provider.dart';
@@ -14,6 +13,7 @@ import 'store/provider/app_providers.dart';
 import 'store/provider/user_provider.dart';
 import 'game/clues/game/ui/guessing_game_screen.dart';
 import 'game/clues/game/state/guessing_game_notifier.dart';
+import 'game/caesar/game/ui/caesar_game_main_screen.dart';
 
 
 Future<void> main() async {
