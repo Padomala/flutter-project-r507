@@ -83,6 +83,18 @@ class HomePage extends StatelessWidget {
                         width: double.infinity,
                         height: 120,
                       ),
+                      // ##### DEBUG ##### début
+                      SizedBox(height: cardSpacing),
+                      AtomButton(
+                        label: 'CAESAR DEBUG',
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/game/caesar_game');
+                        },
+                        bgColor: const Color.fromARGB(255, 161, 32, 155),
+                        width: double.infinity,
+                        height: 120,
+                      ),
+                      // ##### DEBUG ##### fin
                     ],
                   ),
                   SizedBox(height: 56),
