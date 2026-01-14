@@ -129,7 +129,18 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
     // Créer un game_data spécifique pour ce jeu dans la session
     final gameId = '${sessionId}_clues';
     
-    final result = await Navigator.push<bool>(
+    final provider = context.read<GameSessionProvider>();
+    final playerIds = provider.currentSession!.playerScores.keys.toList();
+    
+    // Vérifier qu'on a bien 2 joueurs
+    if (playerIds.length < 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erreur: Il faut 2 joueurs pour ce jeu')),
+      );
+      return GameResult.draw(gameType: 'clues', playerIds: playerIds);
+    }
+    
+    final result = await Navigator.push<Map<String, dynamic>?>(
       context,
       MaterialPageRoute(
         builder: (_) => ChangeNotifierProvider(
@@ -139,27 +150,38 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
       ),
     );
     
-    // Convertir le résultat bool en GameResult
-    if (result == null) return null; // Utilisateur a quitté
+    // Si l'utilisateur quitte sans finir le jeu
+    if (result == null) return null;
     
-    final provider = context.read<GameSessionProvider>();
-    final playerIds = provider.currentSession!.playerScores.keys.toList();
+    final playerA = playerIds[0];
+    final playerB = playerIds[1];
     
-    if (playerIds.length >= 2) {
-      // Le joueur A a gagné si result == true
-      final playerA = playerIds[0];
-      final playerB = playerIds[1];
-      
-      return GameResult.winnerLoser(
-        gameType: 'clues',
-        winnerId: result ? playerA : playerB,
-        loserId: result ? playerB : playerA,
-        winnerPoints: 1,
-        loserPoints: 0,
-      );
+    // Extraire les scores du résultat
+    final playerAScore = result['playerA_score'] as int? ?? 1;
+    final playerBScore = result['playerB_score'] as int? ?? 1;
+    
+    // Déterminer le gagnant
+    String? winnerId;
+    if (playerAScore > playerBScore) {
+      winnerId = playerA;
+    } else if (playerBScore > playerAScore) {
+      winnerId = playerB;
     }
+    // Sinon winnerId reste null (égalité)
     
-    return GameResult.draw(gameType: 'clues', playerIds: playerIds);
+    return GameResult(
+      gameType: 'clues',
+      winnerId: winnerId,
+      scores: {
+        playerA: playerAScore,
+        playerB: playerBScore,
+      },
+      completedAt: DateTime.now(),
+      additionalData: {
+        'rounds_played': 2,
+        'game_finished': result['finished'] ?? true,
+      },
+    );
   }
 
   Future<GameResult?> _launchCaesarGame() async {

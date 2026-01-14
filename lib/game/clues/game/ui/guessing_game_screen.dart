@@ -287,6 +287,17 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
   
   // Le popup game over reste inchangé mais je l'inclus pour complétude
   Widget _buildGameOverPopup(BuildContext context, GuessingGameNotifier notifier) {
+    final state = notifier.state;
+    
+    // Compter les victoires (pour l'instant égalité car pas de tracking des rounds)
+    // TODO: Ajouter un système pour tracker qui a gagné chaque round
+    final Map<String, dynamic> gameResults = {
+      'finished': true,
+      'playerA_score': 1, // Pour l'instant on met 1-1
+      'playerB_score': 1,
+      'note': 'Système de rounds à améliorer'
+    };
+    
     return Scaffold(
       backgroundColor: Colors.transparent, 
       body: Stack(
@@ -311,7 +322,10 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
                        _guessController.clear();
                        notifier.resetGameFull();
                   }, color: AppColors.blue),
-                  TextButton(onPressed: () => Navigator.pop(context), child: const Text("Quitter"))
+                  _buildStyledButton("TERMINER", false, () {
+                    // Retourner les résultats à l'orchestrateur
+                    Navigator.pop(context, gameResults);
+                  }, color: AppColors.gray),
                 ],
               ),
             ),
