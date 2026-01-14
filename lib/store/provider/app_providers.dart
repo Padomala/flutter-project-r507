@@ -4,6 +4,7 @@ import './audio_provider.dart';
 import './vibration_provider.dart';
 import 'user_provider.dart';
 import 'room_provider.dart';
+import '../../core/game_orchestrator/providers/game_session_provider.dart';
 
 class AppProviders extends StatelessWidget {
   final Widget child;
@@ -18,6 +19,7 @@ class AppProviders extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AudioProvider()),
         ChangeNotifierProvider(create: (_) => VibrationProvider()),
         ChangeNotifierProvider(create: (_) => RoomProvider()),
+        ChangeNotifierProvider(create: (_) => GameSessionProvider()),
       ],
       child: child,
     );

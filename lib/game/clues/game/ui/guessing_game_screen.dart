@@ -173,6 +173,17 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
         Text('Hypothèse A : ${state.gameData.playerAGuess}', style: const TextStyle(color: kTextColor, fontSize: 20)),
         Text('Mot final B : ${state.gameData.playerBResult}', style: const TextStyle(color: kTextColor, fontSize: 20)),
         const SizedBox(height: 40),
+        // Bouton pour retourner le résultat à l'orchestrateur
+        ElevatedButton(
+          onPressed: () {
+            // Retourner le résultat (true si réussite, false si échec)
+            Navigator.pop(context, isCorrect == true);
+          },
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+          child: const Text('Continuer', style: TextStyle(fontSize: 18)),
+        ),
+        const SizedBox(height: 10),
+        // Bouton optionnel pour rejouer (reset) - utile pour test standalone
         ElevatedButton(
           onPressed: isLoading ? null : () {
              // On vide les champs de texte pour la prochaine partie
@@ -183,7 +194,7 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
           style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor),
           child: isLoading 
               ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-              : const Text('Nouvelle Partie'),
+              : const Text('Nouvelle Partie (Standalone)'),
         ),
       ],
     );

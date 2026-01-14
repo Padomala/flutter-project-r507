@@ -7,6 +7,8 @@ import 'package:game_v1/widget/atoms/atom_button.dart';
 import 'package:game_v1/widget/atoms/atom_title_page.dart';
 import 'package:game_v1/widget/atoms/atom_hub.dart';
 import '../../store/provider/room_provider.dart';
+import '../../core/game_orchestrator/providers/game_session_provider.dart';
+import '../../core/game_orchestrator/ui/game_orchestrator_screen.dart';
 
 class RoomHub extends StatefulWidget {
   const RoomHub({super.key});
@@ -38,7 +40,35 @@ class _RoomHubState extends State<RoomHub> {
 
   void _playGames() async {
     try {
-      await context.read<RoomProvider>().startGame();
+      final roomProvider = context.read<RoomProvider>();
+      final sessionProvider = context.read<GameSessionProvider>();
+      
+      // 1. Mettre à jour le statut de la room
+      await roomProvider.startGame();
+      
+      // 2. Créer la session de jeu
+      final playerIds = roomProvider.participants.map((p) => p.id).toList();
+      final nbGames = roomProvider.currentRoom?.settings?['nb_games'] ?? 3;
+      
+      final sessionId = await sessionProvider.createSession(
+        roomId: roomProvider.currentRoom!.id,
+        nbGames: nbGames,
+        playerIds: playerIds,
+      );
+      
+      if (sessionId == null) {
+        throw Exception('Impossible de créer la session de jeu');
+      }
+      
+      // 3. Naviguer vers l'orchestrateur
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => GameOrchestratorScreen(sessionId: sessionId),
+          ),
+        );
+      }
     } catch (e) {
        if (mounted) {
          ScaffoldMessenger.of(context).showSnackBar(
