@@ -20,6 +20,7 @@ class RoomHub extends StatefulWidget {
 class _RoomHubState extends State<RoomHub> {
   
   int _previousParticipantCount = 0;
+  bool _hasNavigatedToGame = false; // Pour éviter la double navigation
 
   @override
   void initState() {
@@ -157,9 +158,40 @@ class _RoomHubState extends State<RoomHub> {
        _previousParticipantCount = players.length;
     });
     
-    // Check if game started
-    if (room != null && room.status == 'playing') {
-       // ... existing game start logic ...
+    // Check if game started - Auto navigate for guest
+    if (room != null && room.status == 'playing' && !_hasNavigatedToGame) {
+      // Marquer comme déjà navigué
+      _hasNavigatedToGame = true;
+      
+      // Charger ou créer la session de jeu
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        
+        final sessionProvider = context.read<GameSessionProvider>();
+        
+        // Essayer de charger la session existante par room_id
+        await sessionProvider.loadSessionByRoomId(room.id);
+        
+        if (sessionProvider.currentSession != null && mounted) {
+          // Session trouvée, naviguer vers l'orchestrateur
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => GameOrchestratorScreen(
+                sessionId: sessionProvider.currentSession!.id,
+              ),
+            ),
+          );
+        } else {
+          // Session non trouvée (ne devrait pas arriver)
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Erreur: Session de jeu non trouvée'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      });
     }
 
     // Convert RoomParticipant to AtomHub Player model if needed, or update AtomHub to use RoomParticipant.
