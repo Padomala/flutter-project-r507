@@ -12,7 +12,6 @@ class GuessingGameNotifier extends ChangeNotifier {
   final CommunicationService _commService;
   late PlayerId _localPlayerId;
   
-  // UX : Pour afficher des spinners sur les boutons
   bool _isLoading = false; 
   bool get isLoading => _isLoading;
 
@@ -24,126 +23,151 @@ class GuessingGameNotifier extends ChangeNotifier {
   GuessingGameState _state = GuessingGameState(
     currentState: GameStateEnum.waiting,
     localPlayerId: PlayerId.playerA,
-    gameData: const GuessingGameDataModel(targetWord: '', cluesForA: []),
+    gameData: const GuessingGameDataModel(targetWord: '', forbiddenWords: []),
+    currentRound: 1,
   );
   GuessingGameState get state => _state;
 
-  void _setState(GuessingGameState newState) {
-    _state = newState;
-    notifyListeners();
-  }
-  
   void _setLoading(bool loading) {
     _isLoading = loading;
     notifyListeners();
   }
 
-  // Logique d'état corrigée
-  GameStateEnum _determineState(GuessingGameDataModel gameData) {
-    // 1. Si on a un verdict (vrai ou faux), c'est fini
+  // --- LOGIQUE D'ÉTAT ---
+  GameStateEnum _determineState(GuessingGameDataModel gameData, String? playerBId, bool isGameOver) {
+    if (isGameOver) return GameStateEnum.results;
+    if (playerBId == null) return GameStateEnum.waiting;
+
+    // Si le mot a été trouvé (ou perdu), on affiche le résultat de la manche
     if (gameData.isCorrect != null) {
       return GameStateEnum.results;
     } 
-    // 2. Si le joueur A n'a pas encore deviné (ou null ou vide)
-    else if (gameData.playerAGuess == null || gameData.playerAGuess!.isEmpty) {
-      return GameStateEnum.playerATurn;
-    } 
-    // 3. Sinon, c'est au tour de B
-    else {
-      return GameStateEnum.playerBTurn;
-    }
+    
+    // Sinon, on est en plein jeu (Descripteur parle, Devineur tape)
+    return GameStateEnum.playerATurn; // On utilise cet enum comme "En cours de jeu"
   }
 
-  Future<void> _createInitialGameData() async {
+  // Initialisation (Création Round 1)
+  Future<void> _createInitialGameData({int round = 1}) async {
     final random = Random();
-    final List<String> availableWords = kGuessingGameClues.keys.toList();
+    final List<String> availableWords = kTabooWords.keys.toList();
     final targetWord = availableWords[random.nextInt(availableWords.length)];
-    final clues = kGuessingGameClues[targetWord] ?? [];
+    final forbidden = kTabooWords[targetWord] ?? [];
 
-    // On utilise le modèle pour générer le JSON propre
-    final newData = GuessingGameDataModel(
-      targetWord: targetWord,
-      cluesForA: clues,
-      playerAGuess: null,
-      playerBResult: null,
-      isCorrect: null,
-    );
+    final initialData = {
+      'round': round,
+      'game_over': false,
+      'targetWord': targetWord,
+      'forbiddenWords': forbidden,
+      'guess': null,
+      'isCorrect': null,
+    };
 
-    await _commService.createGameData(newData.toJson());
+    await _commService.createGameData(initialData);
   }
 
   void _initializeGame() async {
-    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
-    
-    // Détermination du rôle (inchangé)
-    if (currentUserId == null) {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    var gameMetadata = await _commService.getGameMetadata();
+
+    if (gameMetadata == null) {
+      await _createInitialGameData(round: 1); 
       _localPlayerId = PlayerId.playerA;
     } else {
-      final gameMetadata = await _commService.getGameMetadata();
-      if (gameMetadata != null && gameMetadata['player_b_id'] == currentUserId) {
-        _localPlayerId = PlayerId.playerB;
-      } else {
+      final playerA = gameMetadata['player_a_id'];
+      final playerB = gameMetadata['player_b_id'];
+
+      if (user.id == playerA) {
         _localPlayerId = PlayerId.playerA;
+      } else if (user.id == playerB) {
+        _localPlayerId = PlayerId.playerB;
+      } else if (playerB == null) {
+        final success = await _commService.joinGameAsPlayerB();
+        if (success) _localPlayerId = PlayerId.playerB;
+        else return;
+      } else {
+        return; 
       }
     }
 
-    // Chargement initial
-    Map<String, dynamic>? initialGameDataJson = await _commService.getGameData();
-
-    if (initialGameDataJson == null || initialGameDataJson['targetWord'] == null) {
-      await _createInitialGameData();
-      initialGameDataJson = await _commService.getGameData();
-    }
-    
-    final initialGameData = GuessingGameDataModel.fromJson(initialGameDataJson ?? {});
-    
-    _setState(GuessingGameState(
-      localPlayerId: _localPlayerId,
-      currentState: _determineState(initialGameData),
-      gameData: initialGameData
-    ));
-    
-    // Écoute du stream
-    _commService.gameDataStream.listen((jsonData) {
-      if (jsonData.isEmpty) return;
+    _commService.gameStream.listen((row) {
+      if (row.isEmpty) return;
+      
+      final playerBId = row['player_b_id']; 
+      final jsonData = row['data'] as Map<String, dynamic>? ?? {}; 
+      final int round = jsonData['round'] ?? 1;
+      final bool gameOver = jsonData['game_over'] ?? false;
       final gameData = GuessingGameDataModel.fromJson(jsonData);
-      _setState(_state.copyWith(
-        currentState: _determineState(gameData),
+
+      _state = _state.copyWith(
+        localPlayerId: _localPlayerId,
+        currentState: _determineState(gameData, playerBId, gameOver),
         gameData: gameData,
-      ));
+        currentRound: round,
+        isGameOver: gameOver,
+      );
+      notifyListeners();
     });
   }
 
-  // --- ACTIONS ---
+  // --- ACTIONS DU JEU ---
 
+  // Action du DEVINEUR : Proposer un mot
   Future<void> submitGuess(String guess) async {
-    if (_isLoading) return; // Anti-spam
-    if (guess.trim().isEmpty) return;
-    
+    if (_isLoading || guess.trim().isEmpty) return;
     _setLoading(true);
-    await _commService.updateGameDataField(key: 'playerAGuess', value: guess.trim());
+
+    final target = _state.gameData.targetWord;
+    // Vérification automatique insensible à la casse
+    final isMatch = guess.trim().toLowerCase() == target.trim().toLowerCase();
+
+    Map<String, dynamic> updates = {
+      'guess': guess.trim(),
+      'isCorrect': isMatch, 
+    };
+
+    // Si manche 2 et correct => Fin du jeu
+    if (_state.currentRound == 2 && isMatch) {
+       updates['game_over'] = true;
+    }
+
+    await _commService.updateGameDataBatch(updates);
     _setLoading(false);
   }
 
-  Future<void> confirmFinalWord(String finalWord) async {
+  // Passer à la manche suivante ou finir
+  Future<void> proceedToNextStep() async {
     if (_isLoading) return;
-    if (finalWord.trim().isEmpty) return;
-
     _setLoading(true);
-    final trimmedFinalWord = finalWord.trim();
+
+    if (_state.currentRound == 1) {
+      // Setup Round 2 : Nouveau mot
+      final random = Random();
+      final List<String> availableWords = kTabooWords.keys.toList();
+      final newWord = availableWords[random.nextInt(availableWords.length)];
+      final newForbidden = kTabooWords[newWord] ?? [];
+
+      Map<String, dynamic> updateData = {
+        'round': 2,
+        'targetWord': newWord,
+        'forbiddenWords': newForbidden,
+        'guess': null,
+        'isCorrect': null,
+      };
       
-    await _commService.updateGameDataField(key: 'playerBResult', value: trimmedFinalWord);
-    
-    final bool isCorrect = trimmedFinalWord.toLowerCase() == _state.gameData.targetWord.toLowerCase().trim();
-    await _commService.updateGameDataField(key: 'isCorrect', value: isCorrect);
-    
+      await _commService.updateGameDataBatch(updateData);
+    } else {
+      await _commService.updateGameDataField(key: 'game_over', value: true);
+    }
     _setLoading(false);
   }
 
-  Future<void> resetGame() async {
+  Future<void> resetGameFull() async {
     if (_isLoading) return;
     _setLoading(true);
-    await _createInitialGameData();
+    await _createInitialGameData(round: 1);
     _setLoading(false);
   }
 }

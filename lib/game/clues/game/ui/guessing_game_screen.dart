@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/constants.dart';
+
+import '../../core/constants.dart'; 
 import '../../core/game_enums.dart';
 import '../state/guessing_game_notifier.dart';
 import '../models/guessing_state_model.dart';
+import '../../../../app_colors.dart'; 
 
 class GuessingGameScreen extends StatefulWidget {
   final String gameId;
-
   const GuessingGameScreen({super.key, required this.gameId});
 
   @override
@@ -15,204 +16,308 @@ class GuessingGameScreen extends StatefulWidget {
 }
 
 class _GuessingGameScreenState extends State<GuessingGameScreen> {
-  // 2. On définit les controllers ici pour qu'ils ne soient pas recréés à chaque clic
   final TextEditingController _guessController = TextEditingController();
-  final TextEditingController _confirmController = TextEditingController();
 
   @override
   void dispose() {
-    // Toujours nettoyer les controllers quand on quitte l'écran
     _guessController.dispose();
-    _confirmController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Attention : avec StatefulWidget, on utilise context.read/watch normalement
+    final screenSize = MediaQuery.of(context).size;
     final notifier = context.read<GuessingGameNotifier>();
     final state = context.watch<GuessingGameNotifier>().state;
-    // On récupère isLoading depuis le notifier (assurez-vous d'avoir ajouté le getter dans le Notifier comme vu précédemment)
     final isLoading = context.select<GuessingGameNotifier, bool>((n) => n.isLoading);
 
-    final isLocalPlayerA = state.localPlayerId == PlayerId.playerA;
-
-    Widget buildBodyContent() {
-      switch (state.currentState) {
-        case GameStateEnum.waiting:
-          return _buildWaitingScreen('En attente de l\'autre joueur...');
-
-        case GameStateEnum.playerATurn:
-          if (isLocalPlayerA) {
-            return _buildPlayerATurn(context, state, notifier, isLoading);
-          } else {
-            return _buildWaitingScreen('Joueur A réfléchit...', secretWord: state.gameData.targetWord);
-          }
-
-        case GameStateEnum.playerBTurn:
-          if (!isLocalPlayerA) { // Joueur B
-            return _buildPlayerBTurn(context, state, notifier, isLoading);
-          } else {
-            return _buildWaitingScreen('Joueur B valide l\'hypothèse...');
-          }
-
-        case GameStateEnum.results:
-          return _buildResultsScreen(state, notifier, isLoading);
-      }
+    if (state.isGameOver) {
+      return _buildGameOverPopup(context, notifier);
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Indices Flous (${state.localPlayerId == PlayerId.playerA ? 'Joueur A' : 'Joueur B'})',
-          style: const TextStyle(color: kTextColor),
-        ),
-        backgroundColor: kBackgroundColor,
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: buildBodyContent(),
-        ),
-      ),
-      backgroundColor: kBackgroundColor,
-    );
-  }
-
-  // --- Widgets spécifiques aux états ---
-
-  Widget _buildPlayerATurn(BuildContext context, GuessingGameState state, GuessingGameNotifier notifier, bool isLoading) {
-    // Note : On utilise _guessController défini tout en haut de la classe
-    return SingleChildScrollView(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      body: Stack(
         children: [
-          const Text('Vous devez deviner le mot !', style: TextStyle(color: kTextColor, fontSize: 20, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 20),
-          const Text('Vos indices :', style: TextStyle(color: kTextColor, fontSize: 18)),
-          const SizedBox(height: 10),
-          ...state.gameData.cluesForA.map((clue) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4.0),
-            child: Text('• $clue', style: const TextStyle(color: kSuccessColor, fontSize: 18)),
-          )).toList(),
-          
-          const SizedBox(height: 40),
-          TextField(
-            controller: _guessController, // Utilisation du controller de la classe
-            style: const TextStyle(color: kTextColor),
-            decoration: const InputDecoration(
-              labelText: 'Votre hypothèse (un seul mot) :',
-              labelStyle: TextStyle(color: kTextColor),
-              enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: kPrimaryColor)),
-              focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: kPrimaryColor)),
+          // 1. FOND
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/images/voiture_rouge.png'), 
+                fit: BoxFit.cover,
+              ),
             ),
           ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            // Correction ici : on vérifie isLoading et on utilise _guessController
-            onPressed: isLoading ? null : () => notifier.submitGuess(_guessController.text),
-            style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor),
-            child: isLoading 
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : const Text('Soumettre l\'Hypothèse'),
+          Container(color: Colors.black.withOpacity(0.4)), // Assombrir un peu plus
+
+          // 2. BOUTON RETOUR
+          Positioned(
+            top: 40, left: 20,
+            child: CircleAvatar(
+              backgroundColor: Colors.white.withOpacity(0.8),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back, color: AppColors.textColor, size: 24),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ),
+          
+          // 3. INFO BAR
+          Positioned(
+            top: 40, right: 20,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+              decoration: BoxDecoration(color: AppColors.yellow, borderRadius: BorderRadius.circular(20)),
+              child: Text(
+                "Manche ${state.currentRound} / 2",
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+          ),
+
+          // 4. CONTENU PRINCIPAL
+          Center(
+            child: SingleChildScrollView(
+              child: Container(
+                width: screenSize.width * 0.9,
+                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 80),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white, // Fond blanc pour faire ressortir le style "Carte"
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8)),
+                  ],
+                ),
+                child: _buildGameContent(state, notifier, isLoading),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPlayerBTurn(BuildContext context, GuessingGameState state, GuessingGameNotifier notifier, bool isLoading) {
-    // Note : On utilise _confirmController défini tout en haut de la classe
+  Widget _buildGameContent(GuessingGameState state, GuessingGameNotifier notifier, bool isLoading) {
+    // Si on attend le joueur B
+    if (state.currentState == GameStateEnum.waiting) {
+      return _buildWaitingScreen('En attente du second joueur...');
+    }
+
+    // Si la manche est terminée (Gagné ou Perdu)
+    if (state.currentState == GameStateEnum.results) {
+      return _buildRoundResultsScreen(state, notifier, isLoading);
+    }
+
+    // --- EN JEU ---
+    if (state.amIDescriber) {
+      // VUE DU DESCRIPTEUR (Voir la carte)
+      return _buildDescriberView(state);
+    } else {
+      // VUE DU DEVINEUR (Champ texte)
+      return _buildGuesserView(state, notifier, isLoading);
+    }
+  }
+
+  // --- 1. VUE DU DESCRIPTEUR (La Carte Taboo) ---
+  Widget _buildDescriberView(GuessingGameState state) {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        const Text('Le mot secret est :', style: TextStyle(color: kTextColor, fontSize: 18)),
-        Text(state.gameData.targetWord, style: const TextStyle(color: kPrimaryColor, fontSize: 32, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 30),
-
-        const Text('Hypothèse de Joueur A :', style: TextStyle(color: kTextColor, fontSize: 18)),
+        const Text("FAITES DEVINER CE MOT", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 12)),
         const SizedBox(height: 10),
-        Text(state.gameData.playerAGuess ?? '...', style: const TextStyle(color: kSuccessColor, fontSize: 28, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 30),
-
-        const Text('Confirmez le mot final :', style: TextStyle(color: kTextColor, fontSize: 16)),
-        TextField(
-          controller: _confirmController, // Utilisation du controller de la classe
-          style: const TextStyle(color: kTextColor),
-          decoration: const InputDecoration(
-            labelText: 'Mot final à confirmer :',
-            labelStyle: TextStyle(color: kTextColor),
-            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: kPrimaryColor)),
-            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: kPrimaryColor)),
+        
+        // LE MOT CIBLE
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          decoration: BoxDecoration(
+            color: AppColors.blue,
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: AppColors.blue, width: 2)
+          ),
+          child: Text(
+            state.gameData.targetWord.toUpperCase(),
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 2),
           ),
         ),
-        const SizedBox(height: 20),
-        ElevatedButton(
-          // Correction ici : on vérifie isLoading et on utilise _confirmController
-          onPressed: isLoading ? null : () => notifier.confirmFinalWord(_confirmController.text),
-          style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor),
-          child: isLoading 
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : const Text('Confirmer & Terminer'),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildResultsScreen(GuessingGameState state, GuessingGameNotifier notifier, bool isLoading) {
-    final bool? isCorrect = state.gameData.isCorrect;
-    final String verdict = isCorrect == true ? 'RÉUSSITE !' : 'ÉCHEC';
-    final Color color = isCorrect == true ? kSuccessColor : kErrorColor;
-
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(verdict, style: TextStyle(color: color, fontSize: 36, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 20),
-        Text('Mot cible : ${state.gameData.targetWord}', style: const TextStyle(color: kTextColor, fontSize: 20)),
-        Text('Hypothèse A : ${state.gameData.playerAGuess}', style: const TextStyle(color: kTextColor, fontSize: 20)),
-        Text('Mot final B : ${state.gameData.playerBResult}', style: const TextStyle(color: kTextColor, fontSize: 20)),
-        const SizedBox(height: 40),
-        // Bouton pour retourner le résultat à l'orchestrateur
-        ElevatedButton(
-          onPressed: () {
-            // Retourner le résultat (true si réussite, false si échec)
-            Navigator.pop(context, isCorrect == true);
-          },
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-          child: const Text('Continuer', style: TextStyle(fontSize: 18)),
-        ),
+        
+        const SizedBox(height: 25),
+        const Text("SANS DIRE CES MOTS :", style: TextStyle(color: AppColors.red, fontWeight: FontWeight.bold, fontSize: 14)),
         const SizedBox(height: 10),
-        // Bouton optionnel pour rejouer (reset) - utile pour test standalone
-        ElevatedButton(
-          onPressed: isLoading ? null : () {
-             // On vide les champs de texte pour la prochaine partie
-             _guessController.clear();
-             _confirmController.clear();
-             notifier.resetGame();
-          },
-          style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor),
-          child: isLoading 
-              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-              : const Text('Nouvelle Partie (Standalone)'),
+
+        // LES MOTS INTERDITS
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: AppColors.red.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: AppColors.red.withOpacity(0.3))
+          ),
+          child: Column(
+            children: state.gameData.forbiddenWords.map((word) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 5),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.cancel, color: AppColors.red, size: 20),
+                  const SizedBox(width: 10),
+                  Text(
+                    word.toUpperCase(),
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.red),
+                  ),
+                ],
+              ),
+            )).toList(),
+          ),
+        ),
+        
+        const SizedBox(height: 30),
+        const LinearProgressIndicator(color: AppColors.yellow), // Juste pour l'animation visuelle
+        const SizedBox(height: 10),
+        const Text("L'autre joueur essaye de deviner...", style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey)),
+      ],
+    );
+  }
+
+  // --- 2. VUE DU DEVINEUR (L'input) ---
+  Widget _buildGuesserView(GuessingGameState state, GuessingGameNotifier notifier, bool isLoading) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.hearing, size: 60, color: AppColors.blue),
+        const SizedBox(height: 10),
+        _buildTitle('ÉCOUTEZ BIEN !'),
+        const SizedBox(height: 10),
+        const Text(
+          "L'autre joueur vous décrit un mot.\nNe regardez pas son écran !",
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.grey, fontSize: 16),
+        ),
+        const SizedBox(height: 40),
+
+        _buildStyledTextField(_guessController, 'Votre réponse...', Icons.lightbulb),
+        const SizedBox(height: 20),
+        _buildStyledButton('PROPOSER', isLoading, () {
+          notifier.submitGuess(_guessController.text);
+          _guessController.clear();
+        }),
+      ],
+    );
+  }
+
+  // --- 3. RÉSULTATS ---
+  Widget _buildRoundResultsScreen(GuessingGameState state, GuessingGameNotifier notifier, bool isLoading) {
+    final bool isCorrect = state.gameData.isCorrect == true;
+    final bool isLastRound = state.currentRound == 2;
+    final String target = state.gameData.targetWord;
+    final String guess = state.gameData.guess ?? "?";
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(isCorrect ? Icons.check_circle : Icons.cancel, size: 80, color: isCorrect ? Colors.green : Colors.red),
+        const SizedBox(height: 15),
+        _buildTitle(isCorrect ? 'TROUVÉ !' : 'RATÉ !'),
+        const SizedBox(height: 20),
+        
+        Text("Le mot était :", style: TextStyle(color: Colors.grey[600])),
+        Text(target, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 10),
+        Text("Proposition : $guess", style: const TextStyle(fontSize: 18, fontStyle: FontStyle.italic)),
+
+        const SizedBox(height: 30),
+        _buildStyledButton(
+          isLastRound ? 'VOIR LE SCORE FINAL' : 'MANCHE SUIVANTE', 
+          isLoading, 
+          () => notifier.proceedToNextStep(), 
+          color: isCorrect ? Colors.green : AppColors.blue
         ),
       ],
     );
   }
 
-  Widget _buildWaitingScreen(String message, {String? secretWord}) {
+  // --- HELPERS UI ---
+  Widget _buildTitle(String text) {
+    return Text(
+      text, 
+      textAlign: TextAlign.center, 
+      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: AppColors.textColor, letterSpacing: 1.2)
+    );
+  }
+
+  Widget _buildWaitingScreen(String message) {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        const CircularProgressIndicator(color: kPrimaryColor),
-        const SizedBox(height: 20),
-        Text(message, style: const TextStyle(color: kTextColor, fontSize: 18)),
-        if (secretWord != null) ...[
-           const SizedBox(height: 20),
-           const Text('Mot Secret :', style: TextStyle(color: kTextColor, fontSize: 16)),
-           Text(secretWord, style: const TextStyle(color: kErrorColor, fontSize: 28, fontWeight: FontWeight.bold)),
-        ]
+        const CircularProgressIndicator(color: AppColors.blue),
+        const SizedBox(height: 30),
+        Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.black54, fontSize: 18, fontWeight: FontWeight.bold)),
       ],
+    );
+  }
+
+  Widget _buildStyledTextField(TextEditingController controller, String label, IconData icon) {
+    return Container(
+      decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey[300]!)),
+      child: TextField(
+        controller: controller,
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        decoration: InputDecoration(
+          hintText: label, 
+          prefixIcon: Icon(icon, color: AppColors.blue), 
+          border: InputBorder.none, 
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15)
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStyledButton(String label, bool isLoading, VoidCallback onPressed, {Color color = AppColors.blue}) {
+    return SizedBox(
+      width: double.infinity, height: 55,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : onPressed,
+        style: ElevatedButton.styleFrom(backgroundColor: color, foregroundColor: Colors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+        child: isLoading ? const SizedBox(height: 25, width: 25, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)) : Text(label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1)),
+      ),
+    );
+  }
+  
+  // Le popup game over reste inchangé mais je l'inclus pour complétude
+  Widget _buildGameOverPopup(BuildContext context, GuessingGameNotifier notifier) {
+    return Scaffold(
+      backgroundColor: Colors.transparent, 
+      body: Stack(
+        children: [
+          Container(color: Colors.black.withOpacity(0.8)),
+          Center(
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.85,
+              padding: const EdgeInsets.all(25),
+              decoration: BoxDecoration(
+                color: AppColors.yellow, 
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.flag, size: 60, color: AppColors.textColor),
+                  const SizedBox(height: 15),
+                  const Text("PARTIE TERMINÉE", style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 30),
+                  _buildStyledButton("REJOUER", false, () {
+                       _guessController.clear();
+                       notifier.resetGameFull();
+                  }, color: AppColors.blue),
+                  TextButton(onPressed: () => Navigator.pop(context), child: const Text("Quitter"))
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
