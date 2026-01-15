@@ -11,7 +11,7 @@ class CaesarGamePage extends StatefulWidget {
 
 class _CaesarGamePageState extends State<CaesarGamePage> {
   // Set this variable to switch between Infoter (false) and Inputer (true)
-  bool showInputer = false;
+  bool showInputer = true;
 
   @override
   Widget build(BuildContext context) {
