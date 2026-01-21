@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+/// Liste de couleurs
 const Color kBackgroundColor = Color(0xFF1A1A1A);
-const Color kPrimaryColor = Colors.lightBlue; 
+const Color kPrimaryColor = Colors.lightBlue;
 const Color kErrorColor = Colors.redAccent;
 const Color kSuccessColor = Colors.greenAccent;
 const Color kTextColor = Colors.white;
 
+/// Liste de mots interdits pour chaque mot cible
 const Map<String, List<String>> kTabooWords = {
   'CHIEN': ['OS', 'ABOYER', 'LAISSE'],
   'POMME': ['FRUIT', 'TARTE', 'ROUGE'],
