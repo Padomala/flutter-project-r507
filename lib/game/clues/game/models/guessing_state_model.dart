@@ -2,11 +2,24 @@ import 'package:flutter/foundation.dart';
 import '../../core/game_enums.dart';
 import '../../data/models/game_data_model.dart';
 
+/// Représente l'état complet de l'écran de jeu à un instant T.
+///
+/// Cette classe est utilisée pour reconstruire l'interface utilisateur (UI)
+/// dès qu'une donnée change (changement de manche, nouveau mot, etc.).
 class GuessingGameState {
+  /// L'étape actuelle du jeu
   final GameStateEnum currentState;
+
+  /// L'identifiant du joueur (soit PlayerA, soit PlayerB).
   final PlayerId localPlayerId;
+
+  /// Les données de la manche (mot cible, mots interdits).
   final GuessingGameDataModel gameData;
+
+  /// Le numéro de la manche actuelle (permet de gérer l'alternance des rôles).
   final int currentRound;
+
+  /// Indique si la partie complète est finie.
   final bool isGameOver;
 
   GuessingGameState({
@@ -17,20 +30,21 @@ class GuessingGameState {
     this.isGameOver = false,
   });
 
-  // --- LOGIQUE DES RÔLES TABOO ---
-  
-  // Le Devineur est celui qui doit trouver le mot
+  /// En Manche 1, c'est le Joueur B qui devine.
+  /// En Manche 2, les rôles s'inversent : c'est le Joueur A.
   bool get amIGuesser {
     if (currentRound == 1) {
-      return localPlayerId == PlayerId.playerB; // Manche 1 : B devine
+      return localPlayerId == PlayerId.playerB;
     } else {
-      return localPlayerId == PlayerId.playerA; // Manche 2 : A devine
+      return localPlayerId == PlayerId.playerA;
     }
   }
 
-  // Le Descripteur est celui qui voit la carte et les mots interdits
+  /// L'opposé de [amIGuesser] : si je ne devine pas, je décris.
   bool get amIDescriber => !amIGuesser;
 
+  /// Créer une nouvelle version de l'état en ne modifiant que certains champs.
+  /// On en crée un nouveau avec les mises à jour => rafraîchissement de l'UI.
   GuessingGameState copyWith({
     GameStateEnum? currentState,
     GuessingGameDataModel? gameData,

@@ -1,12 +1,21 @@
 enum GameStateEnum {
-  // En attente de connexion
+  /// En attente de connexion
   waiting,
-  // Le joueur A doit deviner
+
+  /// Le tour du joueur A
   playerATurn,
-  // Le joueur B doit confirmer/valider
+
+  /// Le tour du joueur B
   playerBTurn,
-  // Affichage des résultats
+
+  /// Affichage des résultats
   results,
 }
 
-enum PlayerId { playerA, playerB }
+enum PlayerId {
+  /// Le joueur A
+  playerA,
+
+  /// Le joueur B
+  playerB,
+}
