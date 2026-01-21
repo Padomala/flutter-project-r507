@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:confetti/confetti.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/game_result_model.dart';
 import '../providers/game_session_provider.dart';
 import '../../../store/provider/room_provider.dart';
@@ -8,10 +9,7 @@ import '../../../store/provider/room_provider.dart';
 class FinalResultsScreen extends StatefulWidget {
   final String sessionId;
 
-  const FinalResultsScreen({
-    required this.sessionId,
-    super.key,
-  });
+  const FinalResultsScreen({required this.sessionId, super.key});
 
   @override
   State<FinalResultsScreen> createState() => _FinalResultsScreenState();
@@ -25,19 +23,21 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
   @override
   void initState() {
     super.initState();
-    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 3),
+    );
     _loadResults();
   }
 
   Future<void> _loadResults() async {
     final provider = context.read<GameSessionProvider>();
     final results = await provider.getResults();
-    
+
     setState(() {
       _results = results;
       _isLoading = false;
     });
-    
+
     // Lancer les confettis
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
@@ -48,11 +48,13 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
 
   String _getWinnerName(String? winnerId) {
     if (winnerId == null) return 'Égalité';
-    
+
     final roomProvider = context.read<RoomProvider>();
-    final participant = roomProvider.participants
-        .firstWhere((p) => p.id == winnerId, orElse: () => roomProvider.participants.first);
-    
+    final participant = roomProvider.participants.firstWhere(
+      (p) => p.id == winnerId,
+      orElse: () => roomProvider.participants.first,
+    );
+
     return participant.pseudo ?? 'Joueur';
   }
 
@@ -66,7 +68,7 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
   Widget build(BuildContext context) {
     final sessionProvider = context.watch<GameSessionProvider>();
     final session = sessionProvider.currentSession;
-    
+
     if (_isLoading || session == null) {
       return const Scaffold(
         backgroundColor: Color(0xFF1A1A1A),
@@ -78,10 +80,12 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
     final scores = session.playerScores;
     final sortedEntries = scores.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    
+
     final winnerId = sortedEntries.isNotEmpty ? sortedEntries.first.key : null;
     final winnerName = _getWinnerName(winnerId);
-    final winnerScore = sortedEntries.isNotEmpty ? sortedEntries.first.value : 0;
+    final winnerScore = sortedEntries.isNotEmpty
+        ? sortedEntries.first.value
+        : 0;
 
     return Scaffold(
       backgroundColor: const Color(0xFF1A1A1A),
@@ -101,7 +105,7 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
               ),
             ),
           ),
-          
+
           // Confettis
           Align(
             alignment: Alignment.topCenter,
@@ -123,7 +127,7 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
               ],
             ),
           ),
-          
+
           // Contenu
           SafeArea(
             child: Padding(
@@ -131,7 +135,7 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
               child: Column(
                 children: [
                   const SizedBox(height: 20),
-                  
+
                   // Titre
                   const Text(
                     '🎉 Partie Terminée ! 🎉',
@@ -142,18 +146,15 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  
+
                   const SizedBox(height: 40),
-                  
+
                   // Gagnant
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [
-                          Colors.amber.shade700,
-                          Colors.amber.shade400,
-                        ],
+                        colors: [Colors.amber.shade700, Colors.amber.shade400],
                       ),
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
@@ -201,9 +202,9 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 40),
-                  
+
                   // Scores détaillés
                   Expanded(
                     child: Container(
@@ -235,12 +236,12 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
                                 final entry = sortedEntries[index];
                                 final playerName = _getWinnerName(entry.key);
                                 final isWinner = index == 0;
-                                
+
                                 return Container(
                                   margin: const EdgeInsets.only(bottom: 12),
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: isWinner 
+                                    color: isWinner
                                         ? Colors.amber.withOpacity(0.2)
                                         : Colors.white.withOpacity(0.05),
                                     borderRadius: BorderRadius.circular(12),
@@ -306,17 +307,47 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 30),
-                  
+
                   // Boutons
                   Row(
                     children: [
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {
+                          onPressed: () async {
+                            // Réinitialiser le statut de la room pour permettre une nouvelle partie
+                            final roomProvider = context.read<RoomProvider>();
+                            final sessionProvider = context
+                                .read<GameSessionProvider>();
+
+                            if (roomProvider.currentRoom != null) {
+                              try {
+                                debugPrint(
+                                  '🔄 Réinitialisation du statut de la room',
+                                );
+                                await Supabase.instance.client
+                                    .from('rooms')
+                                    .update({'status': 'waiting'})
+                                    .eq('id', roomProvider.currentRoom!.id);
+                              } catch (e) {
+                                debugPrint(
+                                  '⚠️ Erreur réinitialisation room: $e',
+                                );
+                              }
+                            }
+
+                            // Nettoyer la session
+                            debugPrint('🧹 Nettoyage de la session');
+                            sessionProvider.clearSession();
+
                             // Retourner au hub
-                            Navigator.popUntil(context, (route) => route.isFirst);
+                            if (mounted) {
+                              Navigator.popUntil(
+                                context,
+                                (route) => route.isFirst,
+                              );
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.grey.shade800,

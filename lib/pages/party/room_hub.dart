@@ -186,7 +186,14 @@ class _RoomHubState extends State<RoomHub> {
                 sessionId: sessionProvider.currentSession!.id,
               ),
             ),
-          );
+          ).then((_) {
+            // Quand on revient de l'orchestrateur, réinitialiser le flag
+            if (mounted) {
+              setState(() {
+                _hasNavigatedToGame = false;
+              });
+            }
+          });
         } else {
           // Session non trouvée (ne devrait pas arriver)
           ScaffoldMessenger.of(context).showSnackBar(
@@ -195,8 +202,23 @@ class _RoomHubState extends State<RoomHub> {
               backgroundColor: Colors.red,
             ),
           );
+          // Réinitialiser le flag en cas d'erreur
+          setState(() {
+            _hasNavigatedToGame = false;
+          });
         }
       });
+    } else if (room != null && room.status != 'playing') {
+      // Si la room n'est plus en 'playing', réinitialiser le flag
+      if (_hasNavigatedToGame) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _hasNavigatedToGame = false;
+            });
+          }
+        });
+      }
     }
 
     // Convert RoomParticipant to AtomHub Player model if needed, or update AtomHub to use RoomParticipant.

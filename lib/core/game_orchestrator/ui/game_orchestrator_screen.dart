@@ -12,10 +12,7 @@ import '../../../game/clues/game/ui/guessing_game_screen.dart';
 class GameOrchestratorScreen extends StatefulWidget {
   final String sessionId;
 
-  const GameOrchestratorScreen({
-    required this.sessionId,
-    super.key,
-  });
+  const GameOrchestratorScreen({required this.sessionId, super.key});
 
   @override
   State<GameOrchestratorScreen> createState() => _GameOrchestratorScreenState();
@@ -32,52 +29,74 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
 
   Future<void> _init() async {
     final provider = context.read<GameSessionProvider>();
-    
-    // Charger la session
-    await provider.loadSession(widget.sessionId);
-    
-    setState(() {
-      _isInitialized = true;
+
+    // Charger la session APRÈS le build
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await provider.loadSession(widget.sessionId);
+
+      if (mounted) {
+        setState(() {
+          _isInitialized = true;
+        });
+
+        // Lancer le premier jeu
+        _launchNextGame();
+      }
     });
-    
-    // Lancer le premier jeu
-    _launchNextGame();
   }
 
   Future<void> _launchNextGame() async {
     final provider = context.read<GameSessionProvider>();
-    
+
+    debugPrint(
+      '🎯 _launchNextGame appelé - currentGameIndex: ${provider.currentSession?.currentGameIndex}',
+    );
+
     // Vérifier s'il reste des jeux
     if (!provider.hasMoreGames || provider.isCompleted) {
+      debugPrint('🏁 Plus de jeux, affichage des résultats');
       _showFinalResults();
       return;
     }
-    
+
     // Attendre un peu pour que l'UI se stabilise
     await Future.delayed(const Duration(milliseconds: 300));
-    
+
     if (!mounted) return;
-    
+
     // Afficher l'écran de transition
+    debugPrint(
+      '📺 Affichage transition pour jeu ${provider.currentSession!.currentGameIndex + 1}',
+    );
     await _showTransition();
-    
+
     if (!mounted) return;
-    
+
     // Lancer le jeu
     final currentGame = provider.currentSession!.currentGame;
+    debugPrint('🎮 Lancement du jeu: ${currentGame.gameType}');
     final result = await _navigateToGame(currentGame.gameType);
-    
+
     if (!mounted) return;
-    
+
     // Si on a un résultat, le sauvegarder
     if (result != null) {
+      debugPrint('💾 Sauvegarde résultat');
       await provider.saveGameResult(result);
+
+      debugPrint(
+        '➡️ Passage au jeu suivant (avant moveToNextGame: ${provider.currentSession!.currentGameIndex})',
+      );
       await provider.moveToNextGame();
-      
+      debugPrint(
+        '➡️ Après moveToNextGame: ${provider.currentSession!.currentGameIndex}',
+      );
+
       // Passer au jeu suivant
       _launchNextGame();
     } else {
       // L'utilisateur a quitté le jeu, retour au hub
+      debugPrint('❌ Utilisateur a quitté le jeu');
       _exitOrchestrator();
     }
   }
@@ -85,7 +104,7 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
   Future<void> _showTransition() async {
     final provider = context.read<GameSessionProvider>();
     final session = provider.currentSession!;
-    
+
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -101,20 +120,20 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
   Future<GameResult?> _navigateToGame(String gameType) async {
     final provider = context.read<GameSessionProvider>();
     final sessionId = provider.currentSession!.id;
-    
+
     debugPrint('🎮 Lancement du jeu: $gameType');
-    
+
     // Router vers le bon jeu selon le type
     switch (gameType) {
       case 'clues':
         return await _launchCluesGame(sessionId);
-      
+
       case 'caesar':
         return await _launchCaesarGame();
-      
+
       case 'labyrinthe':
         return await _launchLabyrintheGame();
-      
+
       default:
         debugPrint('⚠️ Type de jeu inconnu: $gameType');
         // Résultat par défaut pour jeu non implémenté
@@ -128,10 +147,10 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
   Future<GameResult?> _launchCluesGame(String sessionId) async {
     // Créer un game_data spécifique pour ce jeu dans la session
     final gameId = '${sessionId}_clues';
-    
+
     final provider = context.read<GameSessionProvider>();
     final playerIds = provider.currentSession!.playerScores.keys.toList();
-    
+
     // Vérifier qu'on a bien 2 joueurs
     if (playerIds.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -139,27 +158,35 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
       );
       return GameResult.draw(gameType: 'clues', playerIds: playerIds);
     }
-    
+
+    final playerA = playerIds[0];
+    final playerB = playerIds[1];
+
+    debugPrint(
+      '🎮 Lancement Clues: gameId=$gameId, playerA=$playerA, playerB=$playerB',
+    );
+
     final result = await Navigator.push<Map<String, dynamic>?>(
       context,
       MaterialPageRoute(
         builder: (_) => ChangeNotifierProvider(
-          create: (_) => GuessingGameNotifier(gameId: gameId),
+          create: (_) => GuessingGameNotifier(
+            gameId: gameId,
+            playerAId: playerA, // ✅ On passe l'ID du joueur A
+            playerBId: playerB, // ✅ On passe l'ID du joueur B
+          ),
           child: GuessingGameScreen(gameId: gameId),
         ),
       ),
     );
-    
+
     // Si l'utilisateur quitte sans finir le jeu
     if (result == null) return null;
-    
-    final playerA = playerIds[0];
-    final playerB = playerIds[1];
-    
+
     // Extraire les scores du résultat
     final playerAScore = result['playerA_score'] as int? ?? 1;
     final playerBScore = result['playerB_score'] as int? ?? 1;
-    
+
     // Déterminer le gagnant
     String? winnerId;
     if (playerAScore > playerBScore) {
@@ -168,14 +195,11 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
       winnerId = playerB;
     }
     // Sinon winnerId reste null (égalité)
-    
+
     return GameResult(
       gameType: 'clues',
       winnerId: winnerId,
-      scores: {
-        playerA: playerAScore,
-        playerB: playerBScore,
-      },
+      scores: {playerA: playerAScore, playerB: playerBScore},
       completedAt: DateTime.now(),
       additionalData: {
         'rounds_played': 2,
@@ -187,20 +211,22 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
   Future<GameResult?> _launchCaesarGame() async {
     // TODO: Mettre à jour quand la structure de Caesar sera clarifiée
     // Le jeu Caesar est dans game/caesar/game/ui/ mais il faut voir quelle page utiliser
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Le jeu Caesar n\'est pas encore intégré à l\'orchestrateur'),
+        content: Text(
+          'Le jeu Caesar n\'est pas encore intégré à l\'orchestrateur',
+        ),
         duration: Duration(seconds: 2),
       ),
     );
-    
+
     await Future.delayed(const Duration(seconds: 2));
-    
+
     // Résultat temporaire : égalité
     final provider = context.read<GameSessionProvider>();
     final playerIds = provider.currentSession!.playerScores.keys.toList();
-    
+
     return GameResult.draw(
       gameType: 'caesar',
       playerIds: playerIds,
@@ -216,13 +242,13 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
         duration: Duration(seconds: 2),
       ),
     );
-    
+
     await Future.delayed(const Duration(seconds: 2));
-    
+
     // Résultat temporaire : égalité
     final provider = context.read<GameSessionProvider>();
     final playerIds = provider.currentSession!.playerScores.keys.toList();
-    
+
     return GameResult.draw(
       gameType: 'labyrinthe',
       playerIds: playerIds,
@@ -234,14 +260,12 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
     // Marquer la session comme terminée
     final provider = context.read<GameSessionProvider>();
     provider.completeSession();
-    
+
     // Naviguer vers l'écran de résultats
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) => FinalResultsScreen(
-          sessionId: widget.sessionId,
-        ),
+        builder: (_) => FinalResultsScreen(sessionId: widget.sessionId),
       ),
     );
   }
@@ -259,9 +283,7 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const CircularProgressIndicator(
-                color: Colors.lightBlueAccent,
-              ),
+              const CircularProgressIndicator(color: Colors.lightBlueAccent),
               const SizedBox(height: 20),
               Text(
                 'Préparation des jeux...',
@@ -277,7 +299,7 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
     }
 
     final provider = context.watch<GameSessionProvider>();
-    
+
     // Afficher les erreurs si nécessaire
     if (provider.error != null) {
       return Scaffold(
@@ -286,11 +308,7 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.error_outline,
-                color: Colors.red,
-                size: 64,
-              ),
+              const Icon(Icons.error_outline, color: Colors.red, size: 64),
               const SizedBox(height: 20),
               Text(
                 'Erreur',
@@ -330,9 +348,7 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const CircularProgressIndicator(
-              color: Colors.lightBlueAccent,
-            ),
+            const CircularProgressIndicator(color: Colors.lightBlueAccent),
             const SizedBox(height: 20),
             Text(
               'Chargement...',

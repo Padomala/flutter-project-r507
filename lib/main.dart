@@ -13,18 +13,13 @@ import 'store/provider/app_providers.dart';
 import 'store/provider/user_provider.dart';
 import 'game/clues/game/ui/guessing_game_screen.dart';
 import 'game/clues/game/state/guessing_game_notifier.dart';
-import 'game/caesar/game/ui/caesar_game_main_screen.dart';
-
+// import 'game/caesar/game/ui/caesar_game_main_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized(); //we just wait for initialization
   await SupabaseService.initialize(); //we wait to get the url and mdp to connect
 
-  runApp(
-    const AppProviders(
-      child: MyApp(),
-    ),
-  );
+  runApp(const AppProviders(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -67,10 +62,14 @@ class MyApp extends StatelessWidget {
         // }
         // },
         '/register': (context) => Register(),
-        '/game/caesar_game': (context) => CaesarGamePage(),
+        // '/game/caesar_game': (context) => CaesarGamePage(),
         '/guessing_game': (context) => ChangeNotifierProvider(
-          create: (context) => GuessingGameNotifier(gameId: 'a1b2c3d4-0000-0000-0000-000000000000'), 
-          child: const GuessingGameScreen(gameId: 'a1b2c3d4-0000-0000-0000-000000000000'),
+          create: (context) => GuessingGameNotifier(
+            gameId: 'a1b2c3d4-0000-0000-0000-000000000000',
+          ),
+          child: const GuessingGameScreen(
+            gameId: 'a1b2c3d4-0000-0000-0000-000000000000',
+          ),
         ),
       },
     );
