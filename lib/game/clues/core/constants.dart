@@ -16,3 +16,15 @@ const Map<String, List<String>> kTabooWords = {
   'FOOTBALL': ['BALLON', 'BUT', 'SPORT'],
   'AMOUR': ['COEUR', 'AILER', 'ROUGE'],
 };
+
+//Liste de thèmes + mots à faire deviner associer
+const Map<String, List<String>> hotColdWords = {
+  'Animaux': ['CHIEN', 'CHAT', 'POISSON', 'OISEAU', 'REQUIN', 'LION'],
+  'Fruits': ['POMME', 'BANANE', 'KIWI', 'MANGUE', 'MELON', 'POIRE'],
+  'Sports': ['FOOTBALL', 'BASKET', 'TENNIS', 'VOLE', 'GOLF', 'RUGBY'],
+  'Voyages': ['PARIS', 'LONDRES', 'ROMA', 'TAHITI', 'NEW YORK', 'MADRID'],
+  'Musique': ['GUITARE', 'PIANO', 'VIOLIN', 'TRUMPET', 'SAXOPHONE', 'BAZOOKA'],
+  'Vêtements': ['CHIFFON', 'COUTURIER', 'ROUGE', 'BLEU', 'JAUNE', 'VERT'],
+  'Ville': ['PARIS', 'LONDRES', 'ROMA', 'TAHITI', 'NEW YORK', 'MADRID'],
+  'Aliments': ['POMME', 'BANANE', 'KIWI', 'MANGUE', 'MELON', 'POIRE'],
+};
