@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'caesar_game_infoter_screen.dart';
-import 'caesar_game_inputer_screen.dart';
+import 'package:game_v1/game/microphone/game/ui/audio_game_infoter_screen.dart';
+import 'package:game_v1/game/microphone/game/ui/audio_game_microter_screen.dart';
 
-class CaesarGamePage extends StatefulWidget {
-  const CaesarGamePage({super.key});
+class MicrophoneGamePage extends StatefulWidget {
+  const MicrophoneGamePage({super.key});
 
   @override
-  State<CaesarGamePage> createState() => _CaesarGamePageState();
+  State<MicrophoneGamePage> createState() => _MicrophoneGamePageState();
 }
 
-class _CaesarGamePageState extends State<CaesarGamePage> {
+class _MicrophoneGamePageState extends State<MicrophoneGamePage> {
   // Set this variable to switch between Infoter (false) and Inputer (true)
   bool showInputer = true;
 
@@ -17,7 +17,7 @@ class _CaesarGamePageState extends State<CaesarGamePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Code Caesar'),
+        title: const Text('1, 2, 3, criez !'),
         backgroundColor: Colors.pink,
       ),
       body: Stack(
@@ -30,8 +30,8 @@ class _CaesarGamePageState extends State<CaesarGamePage> {
             ),
           ),
           showInputer
-              ? CaesarGamePageInputer()
-              : CaesarGamePageInfoter(),
+              ? MicrophoneGamePageMicroter()
+              : MicrophoneGamePageInfoter(),
         ],
       ),
     );
