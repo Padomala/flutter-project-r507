@@ -184,7 +184,7 @@ class HotColdGameNotifier extends ChangeNotifier {
   }
 
   /// 3. PASSER À LA SUITE (Manche suivante ou Fin de partie)
-  Future<void> markGameAsFinished() async {
+  Future<void> proceedToNextStep() async {
     if (_isLoading) return;
     _setLoading(true);
 

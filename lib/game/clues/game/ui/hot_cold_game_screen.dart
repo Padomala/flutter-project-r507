@@ -23,7 +23,6 @@ class _HotColdGameScreenState extends State<HotColdGameScreen> {
     super.dispose();
   }
 
-  // Fonction pour faire défiler la liste vers le bas quand un nouveau mot arrive
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
@@ -38,13 +37,10 @@ class _HotColdGameScreenState extends State<HotColdGameScreen> {
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
 
-    // On écoute le Notifier spécifique au HotCold
     final notifier = context.read<HotColdGameNotifier>();
     final state = context.watch<HotColdGameNotifier>().state;
-    final isLoading =
-        notifier.isLoading; // Assure-toi que ton notifier expose ça
+    final isLoading = notifier.isLoading;
 
-    // Scroll automatique si l'historique grandit
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
 
     return Scaffold(
@@ -84,7 +80,7 @@ class _HotColdGameScreenState extends State<HotColdGameScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                "Manche ${state.currentRound}",
+                "Manche ${state.currentRound} / 2",
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -93,12 +89,11 @@ class _HotColdGameScreenState extends State<HotColdGameScreen> {
             ),
           ),
 
-          // 4. CONTENU PRINCIPAL (CARTE BLANCHE)
+          // 4. CONTENU PRINCIPAL
           Center(
             child: Container(
               width: screenSize.width * 0.9,
-              height:
-                  screenSize.height * 0.75, // Hauteur fixe pour gérer le scroll
+              height: screenSize.height * 0.75,
               margin: const EdgeInsets.only(top: 80),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -121,7 +116,7 @@ class _HotColdGameScreenState extends State<HotColdGameScreen> {
   }
 
   Widget _buildGameContent(
-    dynamic state, // Utilise le type précis HotColdGameState si dispo
+    dynamic state,
     HotColdGameNotifier notifier,
     bool isLoading,
   ) {
@@ -134,13 +129,11 @@ class _HotColdGameScreenState extends State<HotColdGameScreen> {
       return _buildResultsScreen(state, notifier, isLoading);
     }
 
-    // Affichage commun du thème
     return Column(
       children: [
         _buildThemeHeader(state.gameData.theme),
         const SizedBox(height: 20),
 
-        // Contenu spécifique au rôle
         Expanded(
           child: state.amIDescriber
               ? _buildDescriberView(state, notifier)
@@ -152,7 +145,6 @@ class _HotColdGameScreenState extends State<HotColdGameScreen> {
 
   // --- 1. VUE DU MAÎTRE (CELUI QUI SAIT) ---
   Widget _buildDescriberView(dynamic state, HotColdGameNotifier notifier) {
-    // Récupérer la dernière proposition (si elle existe)
     final history = state.gameData.history;
     final lastAttempt = history.isNotEmpty ? history.last : null;
     final String lastWord = lastAttempt != null ? lastAttempt['word'] : "...";
@@ -201,7 +193,6 @@ class _HotColdGameScreenState extends State<HotColdGameScreen> {
 
         const Spacer(),
 
-        // LES BOUTONS D'ACTION (Seulement si une proposition est en attente ou déjà notée)
         if (history.isNotEmpty) ...[
           Row(
             children: [
@@ -225,7 +216,6 @@ class _HotColdGameScreenState extends State<HotColdGameScreen> {
             ],
           ),
           const SizedBox(height: 15),
-          // Bouton pour valider la victoire
           SizedBox(
             width: double.infinity,
             child: _buildTempButton(
@@ -255,7 +245,6 @@ class _HotColdGameScreenState extends State<HotColdGameScreen> {
 
     return Column(
       children: [
-        // LISTE HISTORIQUE
         Expanded(
           child: history.isEmpty
               ? _buildEmptyState()
@@ -272,7 +261,6 @@ class _HotColdGameScreenState extends State<HotColdGameScreen> {
         const SizedBox(height: 15),
         const Divider(),
 
-        // INPUT TEXT
         _buildStyledTextField(
           _guessController,
           "Votre proposition...",
@@ -280,11 +268,10 @@ class _HotColdGameScreenState extends State<HotColdGameScreen> {
         ),
         const SizedBox(height: 15),
 
-        // BOUTON ENVOYER
         _buildStyledButton("ENVOYER", isLoading, () {
           notifier.submitAttempt(_guessController.text);
           _guessController.clear();
-        }),
+        }, color: AppColors.blue),
       ],
     );
   }
@@ -382,7 +369,7 @@ class _HotColdGameScreenState extends State<HotColdGameScreen> {
         backgroundColor: color,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 15),
-        elevation: isSelected ? 10 : 2, // Effet visuel si sélectionné
+        elevation: isSelected ? 10 : 2,
         side: isSelected
             ? const BorderSide(color: Colors.black, width: 3)
             : null,
@@ -401,7 +388,7 @@ class _HotColdGameScreenState extends State<HotColdGameScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.hearing, size: 50, color: Colors.grey),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           Text(
             "Aucune proposition pour le moment.\nLancez-vous !",
             textAlign: TextAlign.center,
@@ -411,9 +398,6 @@ class _HotColdGameScreenState extends State<HotColdGameScreen> {
       ),
     );
   }
-
-  // ... (Reprendre _buildStyledTextField, _buildStyledButton, _buildWaitingScreen, _buildResultsScreen du code précédent)
-  // Je te les remets ici pour que le code soit complet sans erreur
 
   Widget _buildStyledTextField(
     TextEditingController controller,
@@ -445,15 +429,16 @@ class _HotColdGameScreenState extends State<HotColdGameScreen> {
   Widget _buildStyledButton(
     String label,
     bool isLoading,
-    VoidCallback onPressed,
-  ) {
+    VoidCallback onPressed, {
+    Color color = AppColors.blue,
+  }) {
     return SizedBox(
       width: double.infinity,
       height: 55,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.blue,
+          backgroundColor: color,
           foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -479,12 +464,14 @@ class _HotColdGameScreenState extends State<HotColdGameScreen> {
     );
   }
 
-  // Écran de résultat simple pour Chaud/Froid
   Widget _buildResultsScreen(
     dynamic state,
     HotColdGameNotifier notifier,
     bool isLoading,
   ) {
+    final bool isLastRound = state.currentRound == 2;
+    final bool isCorrect = state.gameData.isCorrect == true;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -502,9 +489,20 @@ class _HotColdGameScreenState extends State<HotColdGameScreen> {
         ),
         const SizedBox(height: 40),
         _buildStyledButton(
-          "JEU SUIVANT",
+          isLastRound ? 'JEU SUIVANT' : 'MANCHE SUIVANTE',
           isLoading,
-          () => notifier.markGameAsFinished(),
+          () {
+            if (isLastRound) {
+              final totalScore = state.gameData.score;
+
+              final gameResult = {'finished': true, 'score': totalScore};
+
+              Navigator.pop(context, gameResult);
+            } else {
+              notifier.proceedToNextStep();
+            }
+          },
+          color: isCorrect ? Colors.green : AppColors.blue,
         ),
       ],
     );
