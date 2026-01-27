@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import '../../core/constants.dart';
 import '../../core/game_enums.dart';
 import '../state/guessing_game_notifier.dart';
 import '../models/guessing_state_model.dart';
@@ -33,10 +31,6 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
       (n) => n.isLoading,
     );
 
-    if (state.isGameOver) {
-      return _buildGameOverPopup(context, notifier);
-    }
-
     return Scaffold(
       body: Stack(
         children: [
@@ -49,15 +43,13 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
               ),
             ),
           ),
-          Container(
-            color: Colors.black.withOpacity(0.4),
-          ), // Assombrir un peu plus
+          Container(color: Colors.black.withAlpha(70)),
           // 2. BOUTON RETOUR
           Positioned(
             top: 40,
             left: 20,
             child: CircleAvatar(
-              backgroundColor: Colors.white.withOpacity(0.8),
+              backgroundColor: Colors.white.withAlpha(100),
               child: IconButton(
                 icon: const Icon(
                   Icons.arrow_back,
@@ -105,7 +97,7 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
                   borderRadius: BorderRadius.circular(25),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withAlpha(70),
                       blurRadius: 15,
                       offset: const Offset(0, 8),
                     ),
@@ -232,9 +224,7 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
         ),
 
         const SizedBox(height: 30),
-        const LinearProgressIndicator(
-          color: AppColors.yellow,
-        ), // Juste pour l'animation visuelle
+        const LinearProgressIndicator(color: AppColors.yellow),
         const SizedBox(height: 10),
         const Text(
           "L'autre joueur essaye de deviner...",
@@ -314,13 +304,15 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
 
         const SizedBox(height: 30),
         _buildStyledButton(
-          isLastRound ? 'VOIR LE SCORE FINAL' : 'MANCHE SUIVANTE',
+          isLastRound ? 'JEU SUIVANT' : 'MANCHE SUIVANTE',
           isLoading,
           () {
             if (isLastRound) {
-              // On appelle proceedToNextStep qui va mettre game_over à true
-              // Cela déclenchera l'affichage du popup pour les 2 joueurs
-              notifier.proceedToNextStep();
+              final totalScore = state.gameData.score;
+
+              final gameResult = {'finished': true, 'score': totalScore};
+
+              Navigator.pop(context, gameResult);
             } else {
               notifier.proceedToNextStep();
             }
@@ -427,62 +419,6 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
                   letterSpacing: 1,
                 ),
               ),
-      ),
-    );
-  }
-
-  // Le popup game over reste inchangé mais je l'inclus pour complétude
-  Widget _buildGameOverPopup(
-    BuildContext context,
-    GuessingGameNotifier notifier,
-  ) {
-    final state = notifier.state;
-
-    // Compter les victoires (pour l'instant égalité car pas de tracking des rounds)
-    // TODO: Ajouter un système pour tracker qui a gagné chaque round
-    final Map<String, dynamic> gameResults = {
-      'finished': true,
-      'playerA_score': 1, // Pour l'instant on met 1-1
-      'playerB_score': 1,
-      'note': 'Système de rounds à améliorer',
-    };
-
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Stack(
-        children: [
-          Container(color: Colors.black.withOpacity(0.8)),
-          Center(
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.85,
-              padding: const EdgeInsets.all(25),
-              decoration: BoxDecoration(
-                color: AppColors.yellow,
-                borderRadius: BorderRadius.circular(25),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.flag, size: 60, color: AppColors.textColor),
-                  const SizedBox(height: 15),
-                  const Text(
-                    "PARTIE TERMINÉE",
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
-                  ),
-                  const SizedBox(height: 30),
-                  _buildStyledButton("REJOUER", false, () {
-                    _guessController.clear();
-                    notifier.resetGameFull();
-                  }, color: AppColors.blue),
-                  _buildStyledButton("TERMINER", false, () {
-                    // Retourner les résultats à l'orchestrateur
-                    Navigator.pop(context, gameResults);
-                  }, color: AppColors.gray),
-                ],
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

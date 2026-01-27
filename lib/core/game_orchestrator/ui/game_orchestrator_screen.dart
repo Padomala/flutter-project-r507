@@ -64,6 +64,14 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
 
     if (!mounted) return;
 
+    // FIX: Re-vérifier l'état car il a pu changer pendant le délai (stream update)
+    // Cela évite le RangeError si l'index a grimpé à la fin de la liste
+    if (!provider.hasMoreGames || provider.isCompleted) {
+      debugPrint('🏁 Plus de jeux (après délai), affichage des résultats');
+      _showFinalResults();
+      return;
+    }
+
     // Afficher l'écran de transition
     debugPrint(
       '📺 Affichage transition pour jeu ${provider.currentSession!.currentGameIndex + 1}',

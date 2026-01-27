@@ -49,10 +49,7 @@ class CommunicationService {
   ///
   /// Enregistre l'utilisateur actuel comme `player_a_id`.
   /// Utilise un `upsert` avec [onConflict] pour éviter les doublons sur l'ID de partie.
-  Future<void> createGameData(
-    Map<String, dynamic> initialData, {
-    String? playerBId,
-  }) async {
+  Future<void> createGameData(Map<String, dynamic> initialData) async {
     final userId = _client.auth.currentUser?.id;
 
     if (userId == null) {
@@ -61,19 +58,27 @@ class CommunicationService {
     }
 
     try {
-      final dataToUpsert = {
+      final gameDataEntry = {
         'game_id': gameId,
         'player_a_id': userId,
         'data': initialData,
       };
 
+      // Si on a un player_b_id, on l'ajoute directement (cas orchestrateur)
       if (playerBId != null) {
-        dataToUpsert['player_b_id'] = playerBId;
+        gameDataEntry['player_b_id'] = playerBId;
+        debugPrint(
+          '✅ Création game_data avec 2 joueurs: A=$userId, B=$playerBId',
+        );
+      } else {
+        debugPrint(
+          '⏳ Création game_data avec 1 joueur: A=$userId (en attente de B)',
+        );
       }
 
       await _client
           .from('game_data')
-          .upsert(dataToUpsert, onConflict: 'game_id');
+          .upsert(gameDataEntry, onConflict: 'game_id');
     } catch (e) {
       debugPrint('Erreur lors de la création initiale des données de jeu: $e');
     }
@@ -155,7 +160,7 @@ class CommunicationService {
 
       Map<String, dynamic> currentData = Map<String, dynamic>.from(
         response['data'],
-      ); // Copie mutable
+      );
       currentData[key] = value;
 
       await _client
@@ -182,7 +187,6 @@ class CommunicationService {
         response['data'],
       );
 
-      // On applique toutes les modifications
       updates.forEach((key, value) {
         currentData[key] = value;
       });
