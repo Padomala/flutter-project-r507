@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:game_v1/game/microphone/game/ui/audio_game_main_screen.dart';
 import 'package:game_v1/pages/shop/shop_page.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'pages/home_page.dart';
 import 'package:provider/provider.dart';
 import 'core/services/supabase_service.dart';
@@ -10,18 +12,32 @@ import 'pages/auth/profile.dart';
 import 'pages/party/create_party.dart';
 import 'pages/party/join_party.dart';
 import 'store/provider/app_providers.dart';
-import 'store/provider/user_provider.dart';
 import 'game/clues/game/ui/guessing_game_screen.dart';
 import 'game/clues/game/state/guessing_game_notifier.dart';
-// import 'game/caesar/game/ui/caesar_game_main_screen.dart';
-import 'game/clues/game/ui/hot_cold_game_screen.dart';
-import 'game/clues/game/state/hot_cold_game_notifier.dart';
+import 'game/caesar/game/ui/caesar_game_main_screen.dart';
+import 'widget/organisms/settings_popup.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized(); //we just wait for initialization
   await SupabaseService.initialize(); //we wait to get the url and mdp to connect
+  await _ensureMicrophonePermission();
 
   runApp(const AppProviders(child: MyApp()));
+}
+
+/// Ask for microphone permission up front so the microphone games can work.
+Future<void> _ensureMicrophonePermission() async {
+  // If already granted, nothing to do.
+  final status = await Permission.microphone.status;
+  if (status.isGranted) return;
+
+  final result = await Permission.microphone.request();
+  if (result.isPermanentlyDenied) {
+    // Best-effort: prompt user to open app settings to enable microphone.
+    await openAppSettings();
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -31,6 +47,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'SPLIT',
+      navigatorKey: navigatorKey,
       theme: ThemeData(
         primarySwatch: Colors.teal,
         scaffoldBackgroundColor: Colors.white,
@@ -38,6 +55,14 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: null,
       home: const SupabaseGate(),
+      builder: (context, child) {
+        return Stack(
+          children: [
+            if (child != null) Positioned.fill(child: child),
+            const SettingsPopup(),
+          ],
+        );
+      },
       routes: {
         '/home': (context) => HomePage(),
         '/create_party': (context) => CreatePartyPage(),
@@ -64,6 +89,16 @@ class MyApp extends StatelessWidget {
         // }
         // },
         '/register': (context) => Register(),
+        '/game/caesar_game': (context) => CaesarGamePage(),
+        '/game/microphone_game': (context) => MicrophoneGamePage(),
+        '/guessing_game': (context) => ChangeNotifierProvider(
+          create: (context) => GuessingGameNotifier(
+            gameId: 'a1b2c3d4-0000-0000-0000-000000000000',
+          ),
+          child: const GuessingGameScreen(
+            gameId: 'a1b2c3d4-0000-0000-0000-000000000000',
+          ),
+        ),
         // '/game/caesar_game': (context) => CaesarGamePage(),
         '/guessing_game': (context) {
           final args =

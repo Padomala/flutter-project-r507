@@ -6,6 +6,7 @@ import '../../widget/atoms/atom_text_field.dart';
 import 'package:game_v1/core/services/supabase_service.dart';
 import '../../app_colors.dart';
 import '../../widget/atoms/atom_button.dart';
+import 'package:game_v1/core/utils/supabase_error_helper.dart';
 
 class Register extends StatefulWidget {
   const Register({super.key});
@@ -14,19 +15,18 @@ class Register extends StatefulWidget {
   State<Register> createState() => _RegisterPageState();
 }
 
-
 class _RegisterPageState extends State<Register> {
-  // text controller
   final _emailController = TextEditingController();
   final _pseudoController = TextEditingController();
   final _passwordController = TextEditingController();
   final _passwordConfirmController = TextEditingController();
-  
-  // Pour gérer l'état de chargement
+
   bool _isLoading = false;
 
   @override
   void dispose() {
+    ScaffoldMessenger.of(context).clearSnackBars();
+
     _emailController.dispose();
     _pseudoController.dispose();
     _passwordController.dispose();
@@ -34,41 +34,59 @@ class _RegisterPageState extends State<Register> {
     super.dispose();
   }
 
-
-  // Fonction d'inscription
   void register() async {
+    FocusScope.of(context).unfocus();
+
     if (_isLoading) return;
-    
+
+    // --- VALIDATIONS LOCALES ---
+    // On utilise SupabaseErrorHandler ici aussi pour avoir la même SnackBar rouge partout
+    // (Assure-toi d'avoir ajouté la ligne "if (error is String)" dans ton helper)
+
     final email = _emailController.text.trim();
+    final pseudo = _pseudoController.text.trim();
+    final password = _passwordController.text;
+    final confirmPassword = _passwordConfirmController.text;
+
+    if (pseudo.isEmpty || email.isEmpty || password.isEmpty) {
+      SupabaseErrorHandler.show(context, "Veuillez remplir tous les champs.");
+      return;
+    }
+
     final RegExp emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-
     if (!emailRegex.hasMatch(email)) {
-       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Format d'email invalide (ex: exemple@mail.com)")),
+      SupabaseErrorHandler.show(context, "Format d'email invalide.");
+      return;
+    }
+
+    if (password != confirmPassword) {
+      SupabaseErrorHandler.show(
+        context,
+        "Les mots de passe ne correspondent pas.",
       );
       return;
     }
 
-    // 1. Validation du mot de passe
-    if (_passwordController.text != _passwordConfirmController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Les mots de passe doivent être identiques")),
+    if (password.length < 6) {
+      SupabaseErrorHandler.show(
+        context,
+        "Le mot de passe doit contenir au moins 6 caractères.",
       );
       return;
     }
 
+    // --- INSCRIPTION SERVEUR ---
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
-      // 2. Appel de la logique d'inscription dans le Provider
       await context.read<UserProvider>().register(
-        email: email, 
-        password: _passwordController.text,
-        username: _pseudoController.text.trim(),
+        email: email,
+        password: password,
+        username: pseudo,
       );
-      // 3. Show confirmation dialog
+
       if (mounted) {
         showDialog(
           context: context,
@@ -76,62 +94,47 @@ class _RegisterPageState extends State<Register> {
           builder: (ctx) => AlertDialog(
             title: const Text("Inscription réussie"),
             content: const Text(
-                "Votre compte a été créé ! \nUn email de confirmation vous a été envoyé. Veuillez l'activer avant de vous connecter."),
+              "Votre compte a été créé avec succès !\n\nUn email de confirmation vous a été envoyé. Veuillez cliquer sur le lien reçu pour activer votre compte.",
+            ),
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.pop(ctx); // Close dialog
-                  Navigator.pop(context); // Go back to Login
+                  Navigator.pop(ctx);
+                  Navigator.pushReplacementNamed(context, '/login');
                 },
-                child: const Text("OK"),
+                child: const Text("J'ai compris"),
               ),
             ],
           ),
         );
       }
-      
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Échec de l\'inscription : ${e.toString()}')),
-        );
-      }
+      // Gestion centralisée des erreurs (AuthException, Réseau, etc.)
+      if (mounted) SupabaseErrorHandler.show(context, e);
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  // La fonction onPressedLogin dans le composant Register n'a pas de sens
-  // si elle est vide. J'ai gardé la fonction register comme l'action principale.
+  // J'ai supprimé _translateRegisterError et _showErrorSnackBar car
+  // tout est maintenant géré par le SupabaseErrorHandler. C'est plus propre !
 
   @override
   Widget build(BuildContext context) {
-    //responsive
     final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
       body: Stack(
         children: [
-          // Image de fond
-          BackgroundPage(
-            pathBackground: 'assets/images/voiture_rouge.png',
-          ),
-          
-          // Bouton de retour (si vous voulez permettre le retour à Login sans inscription)
+          BackgroundPage(pathBackground: 'assets/images/voiture_rouge.png'),
           Positioned(
-            top: MediaQuery.of(context).padding.top + 10,
-            left: 10,
+            top: 40,
+            left: 20,
             child: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
               onPressed: () => Navigator.pushNamed(context, '/home'),
             ),
           ),
-          
-          // Contenu principal
           Center(
             child: SingleChildScrollView(
               child: Container(
@@ -143,91 +146,76 @@ class _RegisterPageState extends State<Register> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withAlpha(20),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
+                      color: Colors.black.withAlpha(50),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
                     ),
                   ],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Titre
                     const Text(
                       'INSCRIPTION',
                       style: TextStyle(
-                        fontSize: 40,
+                        fontSize: 32,
                         fontWeight: FontWeight.bold,
                         color: Colors.black87,
                       ),
                     ),
                     const SizedBox(height: 20),
-
-                    // Champ Pseudo
                     CustomTextField(
                       controller: _pseudoController,
                       label: "PSEUDO",
                       hintText: "Choisissez un pseudo",
                       icon: Icons.person,
                     ),
-
-                    // Champ Email (J'ai conservé l'ordre de votre composant original,
-                    // mais l'email et le mot de passe sont les champs obligatoires pour Supabase)
+                    const SizedBox(height: 10),
                     CustomTextField(
-                      controller: _emailController, // Utilisation du controller
+                      controller: _emailController,
                       label: "EMAIL",
                       hintText: "Entrez votre mail",
                       icon: Icons.mail,
                       fieldType: EnumFieldType.email,
                     ),
-
-                    // Champ Mot de passe
+                    const SizedBox(height: 10),
                     CustomTextField(
                       controller: _passwordController,
                       label: "MOT DE PASSE",
-                      hintText: "Entrez votre mot de passe",
+                      hintText: "Min. 6 caractères",
                       icon: Icons.lock,
                       fieldType: EnumFieldType.password,
-                      // isObscure: true,
                     ),
-
-                    // Champ Confirmer Mot de Passe
+                    const SizedBox(height: 10),
                     CustomTextField(
                       controller: _passwordConfirmController,
-                      label: "CONFIRMER MOT DE PASSE",
-                      hintText: "Confirmez votre mot de passe",
-                      icon: Icons.lock,
+                      label: "CONFIRMATION",
+                      hintText: "Répétez le mot de passe",
+                      icon: Icons.lock_outline,
                       fieldType: EnumFieldType.password,
-                      // isObscure: true,
                     ),
-                    
-                    // Remarque : Le champ "NOM D'UTILISATEUR" doit être géré dans la base de données après l'inscription
-                    // (souvent avec une insertion dans une table 'profiles' ou 'users' distincte).
-                    // Je l'ai retiré pour simplifier le flux d'authentification de base.
-                    
-                    const SizedBox(height: 35),
-
-                    // Bouton S'inscrire
+                    const SizedBox(height: 30),
                     SizedBox(
+                      width: double.infinity,
                       child: AtomButton(
-                        label: _isLoading ? 'INSCRIPTION EN COURS...' : 'S\'INSCRIRE',
+                        label: _isLoading
+                            ? 'CREATION EN COURS...'
+                            : 'S\'INSCRIRE',
                         onPressed: register,
                         bgColor: AppColors.blue,
                         width: double.infinity,
                         height: 60,
                       ),
                     ),
-
                     const SizedBox(height: 15),
-
-                    // Lien vers la page de connexion
                     TextButton(
-                      onPressed: () => Navigator.pushNamed(context, '/login'), // Retourne à Login
+                      onPressed: () => Navigator.pushNamed(context, '/login'),
                       child: const Text(
                         'Déjà un compte ? Se connecter',
                         style: TextStyle(
                           color: AppColors.blue,
                           fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.underline,
                         ),
                       ),
                     ),

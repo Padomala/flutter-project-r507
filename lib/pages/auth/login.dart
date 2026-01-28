@@ -4,10 +4,10 @@ import 'package:game_v1/core/services/supabase_service.dart';
 import 'package:game_v1/pages/auth/register.dart';
 import 'package:game_v1/store/provider/user_provider.dart';
 import 'package:provider/provider.dart';
-
 import '../../app_colors.dart';
 import '../../widget/atoms/atom_button.dart';
 import '../../widget/atoms/atom_background_page.dart';
+import 'package:game_v1/core/utils/supabase_error_helper.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -15,7 +15,6 @@ class Login extends StatefulWidget {
   @override
   State<Login> createState() => _LoginPageState();
 }
-
 
 class _LoginPageState extends State<Login> {
   // get auth service
@@ -25,20 +24,30 @@ class _LoginPageState extends State<Login> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  // login button pressed
+  @override
+  void dispose() {
+    // nettoie les messages si l'utilisateur quitte la page
+    ScaffoldMessenger.of(context).clearSnackBars();
+
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   void onPressedLogin() async {
+    FocusScope.of(context).unfocus();
+
     try {
       await context.read<UserProvider>().login(
-        email: _emailController.text.trim(), 
-        password: _passwordController.text
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
       );
+
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/profile');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login failed: $e')),
-      );
+      if (mounted) SupabaseErrorHandler.show(context, e);
     }
   }
 
@@ -51,9 +60,7 @@ class _LoginPageState extends State<Login> {
       body: Stack(
         children: [
           // Image de fond
-          BackgroundPage(
-            pathBackground: 'assets/images/voiture_rouge.png',
-          ),
+          BackgroundPage(pathBackground: 'assets/images/voiture_rouge.png'),
 
           // Back Button
           Positioned(
@@ -128,7 +135,10 @@ class _LoginPageState extends State<Login> {
                     ),
                     const SizedBox(height: 15),
                     TextButton(
-                      onPressed: () => Navigator.pushNamed(context, '/register'), // Retourne à Login
+                      onPressed: () => Navigator.pushNamed(
+                        context,
+                        '/register',
+                      ), // Retourne à Login
                       child: const Text(
                         'Vous n\'avez pas de compte ? Inscrivez-vous',
                         style: TextStyle(
@@ -137,49 +147,6 @@ class _LoginPageState extends State<Login> {
                         ),
                       ),
                     ),
-
-                    // // Séparateur "Ou se connecter avec"
-                    // const Row(
-                    //   children: [
-                    //     Expanded(child: Divider()),
-                    //     Padding(
-                    //       padding: EdgeInsets.symmetric(horizontal: 10),
-                    //       child: Text(
-                    //         'Ou se connecter avec',
-                    //         style: TextStyle(
-                    //           color: Colors.black54,
-                    //           fontSize: 14,
-                    //         ),
-                    //       ),
-                    //     ),
-                    //     Expanded(child: Divider()),
-                    //   ],
-                    // ),
-
-                    // // Bouton Google
-                    // SizedBox(
-                    //   width: double.infinity,
-                    //   child: OutlinedButton.icon(
-                    //     onPressed: () {
-                    //       // Logique de connexion avec Google
-                    //     },
-                    //     icon: const Icon(
-                    //       Icons.g_mobiledata,
-                    //       color: AppColors.red,
-                    //     ),
-                    //     label: const Text(
-                    //       'Google',
-                    //       style: TextStyle(fontSize: 16, color: AppColors.red),
-                    //     ),
-                    //     style: OutlinedButton.styleFrom(
-                    //       padding: const EdgeInsets.symmetric(vertical: 12),
-                    //       shape: RoundedRectangleBorder(
-                    //         borderRadius: BorderRadius.circular(10),
-                    //       ),
-                    //     ),
-                    //   ),
-                    // ),
-                    // const SizedBox(height: 15),
                   ],
                 ),
               ),

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../atoms/atom_toggle_button.dart';
 import '../../store/provider/audio_provider.dart';
 import '../../store/provider/vibration_provider.dart';
+import '../../main.dart';
 
 class SettingsPopup extends StatelessWidget {
   const SettingsPopup({super.key});
@@ -10,14 +11,16 @@ class SettingsPopup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      top: 52,
-      right: 32,
+      top: 10,
+      right: 10,
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: GestureDetector(
           onTap: () {
+            final navContext = navigatorKey.currentContext;
+            if (navContext == null) return;
             showDialog(
-              context: context,
+              context: navContext,
               builder: (context) => StatefulBuilder(
                 builder: (context, setStateDialog) => AlertDialog(
                   backgroundColor: Colors.yellow,
