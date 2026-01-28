@@ -15,18 +15,16 @@ import 'store/provider/app_providers.dart';
 import 'game/clues/game/ui/guessing_game_screen.dart';
 import 'game/clues/game/state/guessing_game_notifier.dart';
 import 'game/caesar/game/ui/caesar_game_main_screen.dart';
+import 'widget/organisms/settings_popup.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized(); //we just wait for initialization
   await SupabaseService.initialize(); //we wait to get the url and mdp to connect
   await _ensureMicrophonePermission();
 
-  runApp(
-    const AppProviders(
-      child: MyApp(),
-    ),
-  );
+  runApp(const AppProviders(child: MyApp()));
 }
 
 /// Ask for microphone permission up front so the microphone games can work.
@@ -49,6 +47,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'SPLIT',
+      navigatorKey: navigatorKey,
       theme: ThemeData(
         primarySwatch: Colors.teal,
         scaffoldBackgroundColor: Colors.white,
@@ -56,6 +55,14 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: null,
       home: const SupabaseGate(),
+      builder: (context, child) {
+        return Stack(
+          children: [
+            if (child != null) Positioned.fill(child: child),
+            const SettingsPopup(),
+          ],
+        );
+      },
       routes: {
         '/home': (context) => HomePage(),
         '/create_party': (context) => CreatePartyPage(),
@@ -85,8 +92,12 @@ class MyApp extends StatelessWidget {
         '/game/caesar_game': (context) => CaesarGamePage(),
         '/game/microphone_game': (context) => MicrophoneGamePage(),
         '/guessing_game': (context) => ChangeNotifierProvider(
-          create: (context) => GuessingGameNotifier(gameId: 'a1b2c3d4-0000-0000-0000-000000000000'), 
-          child: const GuessingGameScreen(gameId: 'a1b2c3d4-0000-0000-0000-000000000000'),
+          create: (context) => GuessingGameNotifier(
+            gameId: 'a1b2c3d4-0000-0000-0000-000000000000',
+          ),
+          child: const GuessingGameScreen(
+            gameId: 'a1b2c3d4-0000-0000-0000-000000000000',
+          ),
         ),
       },
     );

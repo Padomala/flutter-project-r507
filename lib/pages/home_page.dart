@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import '../widget/atoms/atom_button.dart';
 import '../widget/atoms/atom_title.dart';
-import '../widget/atoms/atom_button.dart';
 import '../widget/organisms/bottom_nav_bar.dart';
 import 'package:provider/provider.dart';
 import '../store/provider/user_provider.dart';
-import '../widget/organisms/settings_popup.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -19,10 +17,7 @@ class HomePage extends StatelessWidget {
         children: [
           // Image d'arrière-plan associée à la maquette
           Positioned.fill(
-            child: Image.asset(
-              'assets/images/feu_vert.png',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/images/feu_vert.png', fit: BoxFit.cover),
           ),
           // Dégradé sombre pour lisibilité
           Positioned.fill(
@@ -61,7 +56,7 @@ class HomePage extends StatelessWidget {
                           if (userProvider.isConnected) {
                             Navigator.pushNamed(context, '/create_party');
                           } else {
-                             Navigator.pushNamed(context, '/login');
+                            Navigator.pushNamed(context, '/login');
                           }
                         },
                         bgColor: Colors.redAccent,
@@ -72,7 +67,7 @@ class HomePage extends StatelessWidget {
                       AtomButton(
                         label: 'REJOINDRE UNE PARTIE',
                         onPressed: () {
-                           final userProvider = context.read<UserProvider>();
+                          final userProvider = context.read<UserProvider>();
                           if (userProvider.isConnected) {
                             Navigator.pushNamed(context, '/join_party');
                           } else {
@@ -114,8 +109,6 @@ class HomePage extends StatelessWidget {
             ),
           ),
           // Boutons de navigation inférieurs (barre fixe)
-          const SettingsPopup(),
-          
           const BottomNavBar(),
         ],
       ),
