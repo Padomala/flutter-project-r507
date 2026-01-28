@@ -27,24 +27,30 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
   void _joinParty() async {
     if (_formKey.currentState?.validate() ?? false) {
       final code = _controller.text;
-      final scaffoldMessenger = ScaffoldMessenger.of(context);
-      
-      scaffoldMessenger.showSnackBar(SnackBar(content: Text('Tentative de connexion à la room $code...')));
-      
+
+      // Vérifier que le widget est encore monté
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Tentative de connexion à la room $code...')),
+      );
+
       try {
         await context.read<RoomProvider>().joinRoom(code);
-        
+
         if (!mounted) return;
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => const RoomHub(),
-          ),
+          MaterialPageRoute(builder: (_) => const RoomHub()),
         );
       } catch (e) {
         if (!mounted) return;
-        scaffoldMessenger.showSnackBar(
-           SnackBar(content: Text('Erreur: Impossible de rejoindre la room. $e')),
+
+        // Récupérer ScaffoldMessenger juste avant de l'utiliser
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: Impossible de rejoindre la room. $e'),
+          ),
         );
       }
     }
@@ -52,7 +58,7 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
 
   String? _validator(String? value) {
     if (value == null || value.trim().isEmpty) return 'Champ requis';
-    // if (value.length != 6) return 'Le code doit comporter 6 chiffres'; 
+    // if (value.length != 6) return 'Le code doit comporter 6 chiffres';
     // Relaxed validation as we might generate strings
     return null;
   }
@@ -62,8 +68,9 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
     return Scaffold(
       body: Stack(
         children: [
-          const BackgroundPage(pathBackground: "assets/images/carrefour.png"), // corrected path
-          
+          const BackgroundPage(
+            pathBackground: "assets/images/carrefour.png",
+          ), // corrected path
           // Back Button
           Positioned(
             top: 40,
@@ -96,7 +103,9 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
                               child: Padding(
                                 padding: const EdgeInsets.all(6),
                                 child: Container(
-                                  padding: const EdgeInsets.all(8), // padding interne
+                                  padding: const EdgeInsets.all(
+                                    8,
+                                  ), // padding interne
                                   decoration: BoxDecoration(
                                     color: const Color.fromARGB(100, 0, 0, 0),
                                     borderRadius: BorderRadius.circular(
@@ -115,7 +124,7 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
                                 ),
                               ),
                             ),
-                            
+
                             TextFormField(
                               controller: _controller,
                               keyboardType: TextInputType.number,
@@ -133,7 +142,9 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: Colors.grey),
+                                  borderSide: const BorderSide(
+                                    color: Colors.grey,
+                                  ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),

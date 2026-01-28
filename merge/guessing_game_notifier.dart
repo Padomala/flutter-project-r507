@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'dart:async'; // Added for StreamSubscription
 import 'dart:math';
 import '../../core/game_enums.dart';
 import '../../core/constants.dart';
@@ -14,36 +13,21 @@ import '../../data/models/game_data_model.dart';
 class GuessingGameNotifier extends ChangeNotifier {
   /// Identifiant unique de la partie.
   final String gameId;
-<<<<<<< HEAD
 
   /// Service de communication avec Supabase.
-=======
-  final String? playerAId; // Optionnel: UUID du joueur A (pour orchestrateur)
-  final String? playerBId; // Optionnel: UUID du joueur B (pour orchestrateur)
->>>>>>> advancedRoomTest
   final CommunicationService _commService;
 
   /// Identifiant du joueur local (A ou B).
   late PlayerId _localPlayerId;
 
-<<<<<<< HEAD
-=======
-  StreamSubscription<Map<String, dynamic>>? _gameSubscription;
-  bool _isDisposed = false;
-
->>>>>>> advancedRoomTest
   /// Indicateur de chargement.
   bool _isLoading = false;
 
   /// Expose l'état actuel aux widgets.
   bool get isLoading => _isLoading;
 
-<<<<<<< HEAD
   /// Initialise le service et lance la configuration de la partie.
   GuessingGameNotifier({required this.gameId})
-=======
-  GuessingGameNotifier({required this.gameId, this.playerAId, this.playerBId})
->>>>>>> advancedRoomTest
     : _commService = CommunicationService(gameId: gameId) {
     _initializeGame();
   }
@@ -62,7 +46,6 @@ class GuessingGameNotifier extends ChangeNotifier {
   /// Gérer l'affichage d'un indicateur de chargement.
   /// Met à jour [_isLoading] et prévient l'UI de se rafraîchir.
   void _setLoading(bool loading) {
-    if (_isDisposed) return;
     _isLoading = loading;
     notifyListeners();
   }
@@ -82,7 +65,6 @@ class GuessingGameNotifier extends ChangeNotifier {
       return GameStateEnum.results;
     }
 
-<<<<<<< HEAD
     // État par défaut : la partie est en cours
     return GameStateEnum.playerATurn;
   }
@@ -90,18 +72,6 @@ class GuessingGameNotifier extends ChangeNotifier {
   /// Prépare les données d'une nouvelle manche.
   /// Pioche un mot au hasard, récupère ses mots interdits et crée l'objet JSON initial en base de données via le service.
   Future<void> _createInitialGameData({int round = 1}) async {
-=======
-    // Sinon, on est en plein jeu (Descripteur parle, Devineur tape)
-    return GameStateEnum
-        .playerATurn; // On utilise cet enum comme "En cours de jeu"
-  }
-
-  // Initialisation (Création Round 1)
-  Future<void> _createInitialGameData({
-    int round = 1,
-    String? playerBId,
-  }) async {
->>>>>>> advancedRoomTest
     final random = Random();
     final List<String> availableWords = kTabooWords.keys.toList();
     final targetWord = availableWords[random.nextInt(availableWords.length)];
@@ -117,7 +87,7 @@ class GuessingGameNotifier extends ChangeNotifier {
       'score': 0,
     };
 
-    await _commService.createGameData(initialData, playerBId: playerBId);
+    await _commService.createGameData(initialData);
   }
 
   /// Configure la session au démarrage.
@@ -125,18 +95,10 @@ class GuessingGameNotifier extends ChangeNotifier {
   /// 2. S'abonne au flux de données pour mettre à jour [_state] en temps réel dès que Supabase change.
   void _initializeGame() async {
     final user = Supabase.instance.client.auth.currentUser;
-    if (user == null || _isDisposed) {
-      debugPrint('🛑 GuessingGame: Pas d\'utilisateur connecté');
-      return;
-    }
-
-    debugPrint('🏁 Init GuessingGame. User: ${user.id}. GameId: $gameId');
-    debugPrint('Args: playerA=$playerAId, playerB=$playerBId');
+    if (user == null) return;
 
     var gameMetadata = await _commService.getGameMetadata();
-    if (_isDisposed) return;
 
-<<<<<<< HEAD
     if (gameMetadata == null) {
       // Cas où la ligne n'existe pas encore : l'utilisateur actuel est le créateur (A)
       await _createInitialGameData(round: 1);
@@ -146,16 +108,9 @@ class GuessingGameNotifier extends ChangeNotifier {
       final playerB = gameMetadata['player_b_id'];
 
       if (user.id == playerA) {
-=======
-    // Mode Orchestrateur Check
-    if (playerAId != null && playerBId != null) {
-      if (user.id == playerAId) {
->>>>>>> advancedRoomTest
         _localPlayerId = PlayerId.playerA;
-        debugPrint('✅ Role: Player A');
-      } else if (user.id == playerBId) {
+      } else if (user.id == playerB) {
         _localPlayerId = PlayerId.playerB;
-<<<<<<< HEAD
       } else if (playerB == null) {
         // La place B est vide : on tente de la prendre
         final success = await _commService.joinGameAsPlayerB();
@@ -174,87 +129,6 @@ class GuessingGameNotifier extends ChangeNotifier {
       if (row.isEmpty) return;
 
       final playerBId = row['player_b_id'];
-=======
-        debugPrint('✅ Role: Player B');
-      } else {
-        debugPrint(
-          '⛔ ERROR: User ID ${user.id} introuvable dans [$playerAId, $playerBId]',
-        );
-        // Fallback pour ne pas crash: prendre A par défaut mais c'est risqué
-        // Mieux vaut return, mais le widget restera en waiting.
-        return;
-      }
-
-      // Création lazy
-      if (gameMetadata == null) {
-        if (_localPlayerId == PlayerId.playerA) {
-          debugPrint('Creating game (Player A)...');
-          await _createInitialGameData(round: 1, playerBId: playerBId);
-          if (_isDisposed) return;
-          gameMetadata = await _commService.getGameMetadata();
-          if (_isDisposed) return;
-        } else {
-          debugPrint('Waiting for Player A to create game...');
-          // Player B doit peut-être attendre que A crée ?
-          // Normalement createGameData gère l'upsert s'il n'existe pas.
-          // Mais ici on utilise createInitialGameData, faisons pareil.
-          await _createInitialGameData(round: 1, playerBId: playerBId);
-          if (_isDisposed) return;
-        }
-      }
-    }
-    // Mode Standalone
-    else {
-      // ... logic existante ...
-      if (gameMetadata == null) {
-        await _createInitialGameData(round: 1);
-        if (_isDisposed) return;
-        _localPlayerId = PlayerId.playerA;
-      } else {
-        final playerA = gameMetadata['player_a_id'];
-        final playerB = gameMetadata['player_b_id'];
-        if (user.id == playerA)
-          _localPlayerId = PlayerId.playerA;
-        else if (user.id == playerB)
-          _localPlayerId = PlayerId.playerB;
-        else if (playerB == null && await _commService.joinGameAsPlayerB()) {
-          if (_isDisposed) return;
-          _localPlayerId = PlayerId.playerB;
-        } else {
-          return;
-        }
-      }
-    }
-
-    // Chargement initial
-    final initialGameData = await _commService.getGameData();
-    if (_isDisposed) return;
-
-    if (initialGameData != null) {
-      debugPrint('📥 Initial Data loaded: $initialGameData');
-      final gameData = GuessingGameDataModel.fromJson(initialGameData);
-      final int round = initialGameData['round'] ?? 1;
-      final bool gameOver = initialGameData['game_over'] ?? false;
-      final playerBIdFromDb = gameMetadata?['player_b_id'] ?? playerBId;
-
-      _state = _state.copyWith(
-        localPlayerId: _localPlayerId,
-        currentState: _determineState(gameData, playerBIdFromDb, gameOver),
-        gameData: gameData,
-        currentRound: round,
-        isGameOver: gameOver,
-      );
-      notifyListeners();
-    }
-
-    // Écoute Live
-    debugPrint('🎧 Subscribing to game stream...');
-    _gameSubscription = _commService.gameStream.listen((row) {
-      if (row.isEmpty || _isDisposed) return;
-      // debugPrint('⚡ Live Update: $row');
-
-      final playerBIdRow = row['player_b_id'];
->>>>>>> advancedRoomTest
       final jsonData = row['data'] as Map<String, dynamic>? ?? {};
       final int round = jsonData['round'] ?? 1;
       final bool gameOver = jsonData['game_over'] ?? false;
@@ -263,7 +137,7 @@ class GuessingGameNotifier extends ChangeNotifier {
       // Mise à jour de l'état local et notification des widgets
       _state = _state.copyWith(
         localPlayerId: _localPlayerId,
-        currentState: _determineState(gameData, playerBIdRow, gameOver),
+        currentState: _determineState(gameData, playerBId, gameOver),
         gameData: gameData,
         currentRound: round,
         isGameOver: gameOver,
@@ -272,19 +146,9 @@ class GuessingGameNotifier extends ChangeNotifier {
     });
   }
 
-<<<<<<< HEAD
-=======
-  @override
-  void dispose() {
-    _isDisposed = true;
-    _gameSubscription?.cancel();
-    super.dispose();
-  }
-
->>>>>>> advancedRoomTest
   /// Compare le mot tapé avec la cible, définit si c'est correct, et met à jour Supabase.
   Future<void> submitGuess(String guess) async {
-    if (_isLoading || guess.trim().isEmpty || _isDisposed) return;
+    if (_isLoading || guess.trim().isEmpty) return;
     _setLoading(true);
 
     final target = _state.gameData.targetWord;

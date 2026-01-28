@@ -45,12 +45,10 @@ class CommunicationService {
     return response['data'] as Map<String, dynamic>;
   }
 
-/**
- * Crée la ligne de données initiale complète
- */
-/**
-   * Crée la ligne de données initiale complète
-   */
+  /// Initialise une nouvelle entrée dans la table 'game_data' pour cette partie.
+  ///
+  /// Enregistre l'utilisateur actuel comme `player_a_id`.
+  /// Utilise un `upsert` avec [onConflict] pour éviter les doublons sur l'ID de partie.
   Future<void> createGameData(Map<String, dynamic> initialData) async {
     final userId = _client.auth.currentUser?.id;
 
@@ -60,19 +58,27 @@ class CommunicationService {
     }
 
     try {
-      final dataToUpsert = {
+      final gameDataEntry = {
         'game_id': gameId,
         'player_a_id': userId,
         'data': initialData,
       };
 
+      // Si on a un player_b_id, on l'ajoute directement (cas orchestrateur)
       if (playerBId != null) {
-        dataToUpsert['player_b_id'] = playerBId;
+        gameDataEntry['player_b_id'] = playerBId;
+        debugPrint(
+          '✅ Création game_data avec 2 joueurs: A=$userId, B=$playerBId',
+        );
+      } else {
+        debugPrint(
+          '⏳ Création game_data avec 1 joueur: A=$userId (en attente de B)',
+        );
       }
 
       await _client
           .from('game_data')
-          .upsert(dataToUpsert, onConflict: 'game_id');
+          .upsert(gameDataEntry, onConflict: 'game_id');
     } catch (e) {
       debugPrint('Erreur lors de la création initiale des données de jeu: $e');
     }
@@ -151,8 +157,10 @@ class CommunicationService {
           .maybeSingle();
 
       if (response == null || response['data'] == null) return;
-      
-      Map<String, dynamic> currentData = Map<String, dynamic>.from(response['data']); // Copie mutable
+
+      Map<String, dynamic> currentData = Map<String, dynamic>.from(
+        response['data'],
+      );
       currentData[key] = value;
 
       await _client
@@ -174,10 +182,11 @@ class CommunicationService {
           .maybeSingle();
 
       if (response == null || response['data'] == null) return;
-      
-      Map<String, dynamic> currentData = Map<String, dynamic>.from(response['data']);
-      
-      // On applique toutes les modifications
+
+      Map<String, dynamic> currentData = Map<String, dynamic>.from(
+        response['data'],
+      );
+
       updates.forEach((key, value) {
         currentData[key] = value;
       });
