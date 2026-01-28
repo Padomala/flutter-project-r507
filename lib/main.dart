@@ -13,8 +13,10 @@ import 'pages/party/create_party.dart';
 import 'pages/party/join_party.dart';
 import 'store/provider/app_providers.dart';
 import 'game/clues/game/ui/guessing_game_screen.dart';
+import 'game/clues/game/ui/hot_cold_game_screen.dart';
 import 'game/clues/game/state/guessing_game_notifier.dart';
-import 'game/caesar/game/ui/caesar_game_main_screen.dart';
+import 'game/clues/game/state/hot_cold_game_notifier.dart';
+// import 'game/caesar/game/ui/caesar_game_main_screen.dart';
 import 'widget/organisms/settings_popup.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -89,16 +91,16 @@ class MyApp extends StatelessWidget {
         // }
         // },
         '/register': (context) => Register(),
-        '/game/caesar_game': (context) => CaesarGamePage(),
+        // '/game/caesar_game': (context) => CaesarGamePage(),
         '/game/microphone_game': (context) => MicrophoneGamePage(),
-        '/guessing_game': (context) => ChangeNotifierProvider(
-          create: (context) => GuessingGameNotifier(
-            gameId: 'a1b2c3d4-0000-0000-0000-000000000000',
-          ),
-          child: const GuessingGameScreen(
-            gameId: 'a1b2c3d4-0000-0000-0000-000000000000',
-          ),
-        ),
+        // '/guessing_game': (context) => ChangeNotifierProvider(
+        //   create: (context) => GuessingGameNotifier(
+        //     gameId: 'a1b2c3d4-0000-0000-0000-000000000000',
+        //   ),
+        //   child: const GuessingGameScreen(
+        //     gameId: 'a1b2c3d4-0000-0000-0000-000000000000',
+        //   ),
+        // ),
         // '/game/caesar_game': (context) => CaesarGamePage(),
         '/guessing_game': (context) {
           final args =
