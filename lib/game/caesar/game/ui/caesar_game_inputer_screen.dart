@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:game_v1/game/caesar/game/state/caesar_game_notifier.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/constants.dart';
 
@@ -45,34 +47,28 @@ class _CaesarGamePageInputerState extends State<CaesarGamePageInputer> {
     super.dispose();
   }
 
-  String enleverAccents(String texte) {
-    const withAccent =    'àâäáãçéèêëîïíôöóõùûüúÿñÀÂÄÁÃÇÉÈÊËÎÏÍÔÖÓÕÙÛÜÚŸÑ';
-    const withoutAccent = 'aaaaaceeeeiiioooouuuuynAAAAACEEEEIIIOOOOUUUUYN';
-    
-    var result = texte;
-    for (var i = 0; i < withAccent.length; i++) {
-      result = result.replaceAll(withAccent[i], withoutAccent[i]);
-    }
-    return result;
-  }
-
   void _onSubmit() async {
-    var text = _txtController.text.trim().toLowerCase();
-    text = enleverAccents(text);
+    var text = enleverAccents(_txtController.text.trim().toLowerCase());
 
-    //HERE we verify if the answer is correctly formated to continue
+    //HERE we verify if the answer is correctly formated to continue (not multiple word)
     if (text.isEmpty || text.split(RegExp(r'\s+')).length > 1) {
       showNotification('Veuillez entrer un seul mot non vide.');
       return;
     }
     //HERE we verify if we have a correct answer
-    if (text == enleverAccents((_question['answerWord'] ?? '').toLowerCase())) {
+    bool correctResponse = await context.read<CaesarGameNotifier>().submitAttempt(text, _question['answerWord'] ?? '');
+    if (correctResponse) {
       //CORRECT
       showNotification('Bonne réponse !', color: Colors.greenAccent);
+
     } else {
       //INCORRECT
       showNotification('Mauvaise réponse !');
     }
+    // Attend 2 secondes, puis passe à l'écran de résultats
+    await Future.delayed(const Duration(seconds: 2));
+    if (!mounted) return;
+    context.read<CaesarGameNotifier>().goToResult();
   }
 
 
