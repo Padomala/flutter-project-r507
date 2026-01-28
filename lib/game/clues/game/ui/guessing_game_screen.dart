@@ -19,7 +19,14 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
   final TextEditingController _guessController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    debugPrint('🎬 GuessingGameScreen: INIT');
+  }
+
+  @override
   void dispose() {
+    debugPrint('🎬 GuessingGameScreen: DISPOSE');
     _guessController.dispose();
     super.dispose();
   }

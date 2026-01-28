@@ -97,105 +97,103 @@ class GuessingGameNotifier extends ChangeNotifier {
   /// 2. S'abonne au flux de données pour mettre à jour [_state] en temps réel dès que Supabase change.
   void _initializeGame() async {
     final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      debugPrint('🛑 GuessingGame: Pas d\'utilisateur connecté');
+      return;
+    }
+
+    debugPrint('🏁 Init GuessingGame. User: ${user.id}. GameId: $gameId');
+    debugPrint('Args: playerA=$playerAId, playerB=$playerBId');
 
     var gameMetadata = await _commService.getGameMetadata();
 
-    // CAS 1: L'orchestrateur a fourni les IDs des deux joueurs
+    // Mode Orchestrateur Check
     if (playerAId != null && playerBId != null) {
-      debugPrint(
-        '🎮 Mode Orchestrateur: playerA=$playerAId, playerB=$playerBId',
-      );
-
-      // Déterminer qui est le joueur local
       if (user.id == playerAId) {
         _localPlayerId = PlayerId.playerA;
+        debugPrint('✅ Role: Player A');
       } else if (user.id == playerBId) {
         _localPlayerId = PlayerId.playerB;
+        debugPrint('✅ Role: Player B');
       } else {
         debugPrint(
-          '⚠️ Erreur: L\'utilisateur actuel ne fait pas partie de cette game',
+          '⛔ ERROR: User ID ${user.id} introuvable dans [$playerAId, $playerBId]',
         );
+        // Fallback pour ne pas crash: prendre A par défaut mais c'est risqué
+        // Mieux vaut return, mais le widget restera en waiting.
         return;
       }
 
-      // Si la game_data n'existe pas encore, la créer avec les deux joueurs
+      // Création lazy
       if (gameMetadata == null) {
-        debugPrint('Création game_data avec les 2 joueurs...');
-        await _createInitialGameData(round: 1, playerBId: playerBId);
-
-        // Re-lire les métadonnées pour avoir la version complète
-        gameMetadata = await _commService.getGameMetadata();
-        debugPrint('game_data créée: $gameMetadata');
-      }
-
-      // Initialiser l'état immédiatement avec les données qu'on connaît
-      final initialGameData = await _commService.getGameData();
-      if (initialGameData != null) {
-        final gameData = GuessingGameDataModel.fromJson(initialGameData);
-        final int round = initialGameData['round'] ?? 1;
-        final bool gameOver = initialGameData['game_over'] ?? false;
-
-        // Récupérer player_b_id depuis les métadonnées DB (pas le paramètre)
-        final playerBIdFromDb = gameMetadata?['player_b_id'];
-
-        _state = _state.copyWith(
-          localPlayerId: _localPlayerId,
-          currentState: _determineState(gameData, playerBIdFromDb, gameOver),
-          gameData: gameData,
-          currentRound: round,
-          isGameOver: gameOver,
-        );
-
-        debugPrint(
-          'État initial: ${_state.currentState}, playerBIdFromDb: $playerBIdFromDb',
-        );
-        notifyListeners();
+        if (_localPlayerId == PlayerId.playerA) {
+          debugPrint('Creating game (Player A)...');
+          await _createInitialGameData(round: 1, playerBId: playerBId);
+          gameMetadata = await _commService.getGameMetadata();
+        } else {
+          debugPrint('Waiting for Player A to create game...');
+          // Player B doit peut-être attendre que A crée ?
+          // Normalement createGameData gère l'upsert s'il n'existe pas.
+          // Mais ici on utilise createInitialGameData, faisons pareil.
+          await _createInitialGameData(round: 1, playerBId: playerBId);
+        }
       }
     }
-    // CAS 2: Mode standalone (sans orchestrateur)
+    // Mode Standalone
     else {
-      debugPrint('🎮 Mode Standalone');
-
+      // ... logic existante ...
       if (gameMetadata == null) {
-      // Cas où la ligne n'existe pas encore : l'utilisateur actuel est le créateur (A)
         await _createInitialGameData(round: 1);
         _localPlayerId = PlayerId.playerA;
       } else {
         final playerA = gameMetadata['player_a_id'];
         final playerB = gameMetadata['player_b_id'];
-
-        if (user.id == playerA) {
+        if (user.id == playerA)
           _localPlayerId = PlayerId.playerA;
-        } else if (user.id == playerB) {
+        else if (user.id == playerB)
           _localPlayerId = PlayerId.playerB;
-        } else if (playerB == null) {
-        // La place B est vide : on tente de la prendre
-          final success = await _commService.joinGameAsPlayerB();
-          if (success)
-            _localPlayerId = PlayerId.playerB;
-          else
-            return;
+        else if (playerB == null && await _commService.joinGameAsPlayerB()) {
+          _localPlayerId = PlayerId.playerB;
         } else {
           return;
         }
       }
     }
 
-    // Écoute en continu les modifications de Supabase
+    // Chargement initial
+    final initialGameData = await _commService.getGameData();
+    if (initialGameData != null) {
+      debugPrint('📥 Initial Data loaded: $initialGameData');
+      final gameData = GuessingGameDataModel.fromJson(initialGameData);
+      final int round = initialGameData['round'] ?? 1;
+      final bool gameOver = initialGameData['game_over'] ?? false;
+      final playerBIdFromDb = gameMetadata?['player_b_id'] ?? playerBId;
+
+      _state = _state.copyWith(
+        localPlayerId: _localPlayerId,
+        currentState: _determineState(gameData, playerBIdFromDb, gameOver),
+        gameData: gameData,
+        currentRound: round,
+        isGameOver: gameOver,
+      );
+      notifyListeners();
+    }
+
+    // Écoute Live
+    debugPrint('🎧 Subscribing to game stream...');
     _commService.gameStream.listen((row) {
       if (row.isEmpty) return;
+      // debugPrint('⚡ Live Update: $row');
 
-      final playerBId = row['player_b_id'];
+      final playerBIdRow = row['player_b_id'];
       final jsonData = row['data'] as Map<String, dynamic>? ?? {};
       final int round = jsonData['round'] ?? 1;
       final bool gameOver = jsonData['game_over'] ?? false;
       final gameData = GuessingGameDataModel.fromJson(jsonData);
 
-      // Mise à jour de l'état local et notification des widgets
       _state = _state.copyWith(
         localPlayerId: _localPlayerId,
-        currentState: _determineState(gameData, playerBId, gameOver),
+        currentState: _determineState(gameData, playerBIdRow, gameOver),
         gameData: gameData,
         currentRound: round,
         isGameOver: gameOver,
