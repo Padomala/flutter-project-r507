@@ -18,10 +18,7 @@ class AtomHub extends StatelessWidget {
   // Liste des joueurs dans la salle. Max 2.
   final List<Player> players;
 
-  const AtomHub({
-    super.key,
-    required this.players,
-  });
+  const AtomHub({super.key, required this.players});
 
   // Widget interne pour afficher un seul joueur
   Widget _buildPlayerTile(Player player) {
@@ -48,15 +45,17 @@ class AtomHub extends StatelessWidget {
                 ? AvatarHelper.getAvatarImage(player.avatarUrl)
                 : null,
             onBackgroundImageError: (exception, stackTrace) {
-               // Fallback handled by child if backgroundImage fails (conceptually, though CircleAvatar logic is tricky)
+              // Fallback handled by child if backgroundImage fails (conceptually, though CircleAvatar logic is tricky)
             },
             child: player.avatarUrl.isEmpty
                 ? const Icon(Icons.person, color: Colors.white)
                 : null,
-            backgroundColor: player.isHost ? Colors.blue.shade400 : Colors.grey.shade400,
+            backgroundColor: player.isHost
+                ? Colors.blue.shade400
+                : Colors.grey.shade400,
           ),
           const SizedBox(width: 16),
-          
+
           // Pseudo du joueur
           Expanded(
             child: Text(
@@ -68,7 +67,7 @@ class AtomHub extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // Indicateur de Host
           if (player.isHost)
             Container(
@@ -119,7 +118,10 @@ class AtomHub extends StatelessWidget {
             // Afficher une tuile "En attente" si un emplacement est libre
             if (players.length < 2)
               Container(
-                margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                margin: const EdgeInsets.symmetric(
+                  vertical: 8.0,
+                  horizontal: 16.0,
+                ),
                 padding: const EdgeInsets.all(12.0),
                 decoration: BoxDecoration(
                   color: Colors.red.shade100,
@@ -131,11 +133,14 @@ class AtomHub extends StatelessWidget {
                     CircleAvatar(
                       radius: 24,
                       backgroundColor: Colors.red.shade400,
-                      child: const Icon(Icons.hourglass_empty, color: Colors.white),
+                      child: const Icon(
+                        Icons.hourglass_empty,
+                        color: Colors.white,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     const Text(
-                      'En attente d\'un adversaire...',
+                      'En attente d\'un ami...',
                       style: TextStyle(
                         fontSize: 18,
                         color: Colors.red,

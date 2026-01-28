@@ -347,7 +347,7 @@ class _RoomHubState extends State<RoomHub> {
                       )
                     else if (amIHost)
                       _WaitingMessage(
-                        text: "En attente de l'adversaire...",
+                        text: "En attente de l'ami...",
                         color: Colors.yellow,
                       )
                     else
