@@ -17,17 +17,14 @@ class GameSessionService {
     required List<String> playerIds,
   }) async {
     try {
-      // 1. Générer la liste aléatoire de jeux
       final gamesQueue = _generateRandomGames(nbGames);
 
-      // 2. Initialiser les scores à 0 pour chaque joueur
       final playerScores = Map<String, int>.fromIterable(
         playerIds,
         key: (id) => id.toString(),
         value: (_) => 0,
       );
 
-      // 3. Créer en base de données
       final response = await _client
           .from('game_sessions')
           .insert({
@@ -50,7 +47,6 @@ class GameSessionService {
 
   /// Générer une liste aléatoire de jeux
   List<GameConfig> _generateRandomGames(int count) {
-    // If we want a variety, shuffle and take
     if (count <= availableGames.length) {
       final shuffled = List<String>.from(availableGames)..shuffle();
       return List.generate(count, (index) {
@@ -58,7 +54,6 @@ class GameSessionService {
       });
     }
 
-    // If we need more than available, random pick (or cycle)
     final random = Random();
     return List.generate(count, (index) {
       final gameType = availableGames[random.nextInt(availableGames.length)];
@@ -125,7 +120,6 @@ class GameSessionService {
       final current = await getSession(sessionId);
       final newIndex = current.currentGameIndex + 1;
 
-      // Déterminer le nouveau statut
       String newStatus = 'in_progress';
       if (newIndex >= current.totalGames) {
         newStatus = 'completed';
@@ -154,7 +148,6 @@ class GameSessionService {
     required int gameIndex,
   }) async {
     try {
-      // 1. Ajouter l'index du jeu aux métadonnées
       final enhancedResult = GameResult(
         gameType: result.gameType,
         winnerId: result.winnerId,
@@ -163,7 +156,6 @@ class GameSessionService {
         additionalData: {...?result.additionalData, 'game_index': gameIndex},
       );
 
-      // 2. Sauvegarder le résultat dans game_results
       await _client.from('game_results').insert({
         'session_id': sessionId,
         'game_type': enhancedResult.gameType,
@@ -172,7 +164,6 @@ class GameSessionService {
         'additional_data': enhancedResult.additionalData,
       });
 
-      // 3. Mettre à jour les scores globaux dans game_sessions
       final session = await getSession(sessionId);
       final updatedScores = Map<String, int>.from(session.playerScores);
 
@@ -192,14 +183,12 @@ class GameSessionService {
         '✅ Résultat enregistré: ${result.gameType} (index: $gameIndex)',
       );
 
-      // 4. BARRIER SYNCHRONIZATION
-      // Vérifier si tous les joueurs ont fini ce jeu
+      // Vérification barrière synchrone
       final allResults = await _client
           .from('game_results')
           .select()
           .eq('session_id', sessionId);
 
-      // Filtrer pour ne garder que les résultats du jeu actuel
       final currentLevelResults = allResults.where((r) {
         final data = r['additional_data'] as Map<String, dynamic>?;
         return data != null && data['game_index'] == gameIndex;
@@ -209,7 +198,6 @@ class GameSessionService {
         '📊 Résultats reçus pour jeu $gameIndex: ${currentLevelResults.length}/${session.playerScores.length}',
       );
 
-      // Si le nombre de résultats correspond au nombre de joueurs, on passe au suivant
       if (currentLevelResults.length >= session.playerScores.length) {
         debugPrint('🚀 Tous les joueurs ont fini ! Passage au jeu suivant...');
         await moveToNextGame(sessionId);
@@ -241,14 +229,15 @@ class GameSessionService {
   }
 
   /// Stream pour suivre les changements de session en temps réel
-  Stream<GameSession> watchSession(String sessionId) {
+  /// Retourne null si la session n'existe plus ou est vide
+  Stream<GameSession?> watchSession(String sessionId) {
     return _client
         .from('game_sessions')
         .stream(primaryKey: ['id'])
         .eq('id', sessionId)
         .map((data) {
           if (data.isEmpty) {
-            throw Exception('Session not found');
+            return null; // Gestion propre de la fin de session
           }
           return GameSession.fromJson(data.first);
         });

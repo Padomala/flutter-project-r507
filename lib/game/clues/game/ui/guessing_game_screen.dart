@@ -56,9 +56,7 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
               ),
             ),
           ),
-          Container(
-            color: Colors.black.withOpacity(0.4),
-          ), // Assombrir un peu plus
+          Container(color: Colors.black.withOpacity(0.4)),
           // 2. BOUTON RETOUR
           Positioned(
             top: 40,
@@ -107,8 +105,7 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
                 ),
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors
-                      .white, // Fond blanc pour faire ressortir le style "Carte"
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(25),
                   boxShadow: [
                     BoxShadow(
@@ -132,27 +129,19 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
     GuessingGameNotifier notifier,
     bool isLoading,
   ) {
-    // Si on attend le joueur B
     if (state.currentState == GameStateEnum.waiting) {
       return _buildWaitingScreen('En attente du second joueur...');
     }
-
-    // Si la manche est terminée (Gagné ou Perdu)
     if (state.currentState == GameStateEnum.results) {
       return _buildRoundResultsScreen(state, notifier, isLoading);
     }
-
-    // --- EN JEU ---
     if (state.amIDescriber) {
-      // VUE DU DESCRIPTEUR (Voir la carte)
       return _buildDescriberView(state);
     } else {
-      // VUE DU DEVINEUR (Champ texte)
       return _buildGuesserView(state, notifier, isLoading);
     }
   }
 
-  // --- 1. VUE DU DESCRIPTEUR (La Carte Taboo) ---
   Widget _buildDescriberView(GuessingGameState state) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -166,8 +155,6 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
           ),
         ),
         const SizedBox(height: 10),
-
-        // LE MOT CIBLE
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 20),
@@ -187,7 +174,6 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
             ),
           ),
         ),
-
         const SizedBox(height: 25),
         const Text(
           "SANS DIRE CES MOTS :",
@@ -198,8 +184,6 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
           ),
         ),
         const SizedBox(height: 10),
-
-        // LES MOTS INTERDITS
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(15),
@@ -237,11 +221,8 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
                 .toList(),
           ),
         ),
-
         const SizedBox(height: 30),
-        const LinearProgressIndicator(
-          color: AppColors.yellow,
-        ), // Juste pour l'animation visuelle
+        const LinearProgressIndicator(color: AppColors.yellow),
         const SizedBox(height: 10),
         const Text(
           "L'autre joueur essaye de deviner...",
@@ -251,7 +232,6 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
     );
   }
 
-  // --- 2. VUE DU DEVINEUR (L'input) ---
   Widget _buildGuesserView(
     GuessingGameState state,
     GuessingGameNotifier notifier,
@@ -270,7 +250,6 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
           style: TextStyle(color: Colors.grey, fontSize: 16),
         ),
         const SizedBox(height: 40),
-
         _buildStyledTextField(
           _guessController,
           'Votre réponse...',
@@ -285,7 +264,6 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
     );
   }
 
-  // --- 3. RÉSULTATS ---
   Widget _buildRoundResultsScreen(
     GuessingGameState state,
     GuessingGameNotifier notifier,
@@ -307,7 +285,6 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
         const SizedBox(height: 15),
         _buildTitle(isCorrect ? 'TROUVÉ !' : 'RATÉ !'),
         const SizedBox(height: 20),
-
         Text("Le mot était :", style: TextStyle(color: Colors.grey[600])),
         Text(
           target,
@@ -318,19 +295,12 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
           "Proposition : $guess",
           style: const TextStyle(fontSize: 18, fontStyle: FontStyle.italic),
         ),
-
         const SizedBox(height: 30),
         _buildStyledButton(
           isLastRound ? 'VOIR LE SCORE FINAL' : 'MANCHE SUIVANTE',
           isLoading,
           () {
-            if (isLastRound) {
-              // On appelle proceedToNextStep qui va mettre game_over à true
-              // Cela déclenchera l'affichage du popup pour les 2 joueurs
-              notifier.proceedToNextStep();
-            } else {
-              notifier.proceedToNextStep();
-            }
+            notifier.proceedToNextStep();
           },
           color: isCorrect ? Colors.green : AppColors.blue,
         ),
@@ -338,7 +308,6 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
     );
   }
 
-  // --- HELPERS UI ---
   Widget _buildTitle(String text) {
     return Text(
       text,
@@ -438,18 +407,14 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
     );
   }
 
-  // Le popup game over reste inchangé mais je l'inclus pour complétude
   Widget _buildGameOverPopup(
     BuildContext context,
     GuessingGameNotifier notifier,
   ) {
-    final state = notifier.state;
-
-    // Compter les victoires (pour l'instant égalité car pas de tracking des rounds)
-    // TODO: Ajouter un système pour tracker qui a gagné chaque round
+    // Calcul de résultats temporaire
     final Map<String, dynamic> gameResults = {
       'finished': true,
-      'playerA_score': 1, // Pour l'instant on met 1-1
+      'playerA_score': 1,
       'playerB_score': 1,
       'note': 'Système de rounds à améliorer',
     };
@@ -482,8 +447,10 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
                     notifier.resetGameFull();
                   }, color: AppColors.blue),
                   _buildStyledButton("TERMINER", false, () {
-                    // Retourner les résultats à l'orchestrateur
-                    Navigator.pop(context, gameResults);
+                    // SÉCURITÉ ICI : Vérifier mounted avant de pop
+                    if (context.mounted) {
+                      Navigator.pop(context, gameResults);
+                    }
                   }, color: AppColors.gray),
                 ],
               ),

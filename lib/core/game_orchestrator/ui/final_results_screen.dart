@@ -30,8 +30,11 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
   }
 
   Future<void> _loadResults() async {
+    if (!mounted) return;
     final provider = context.read<GameSessionProvider>();
     final results = await provider.getResults();
+
+    if (!mounted) return; // Protection
 
     setState(() {
       _results = results;
@@ -76,9 +79,7 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
       );
     }
 
-    // Déterminer le gagnant final
-    final scores = session.playerScores;
-    final sortedEntries = scores.entries.toList()
+    final sortedEntries = session.playerScores.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
     final winnerId = sortedEntries.isNotEmpty ? sortedEntries.first.key : null;
@@ -91,7 +92,7 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
       backgroundColor: const Color(0xFF1A1A1A),
       body: Stack(
         children: [
-          // Gradient de fond
+          // Background
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -122,21 +123,17 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
                 Colors.blue,
                 Colors.pink,
                 Colors.orange,
-                Colors.purple,
-                Colors.yellow,
               ],
             ),
           ),
 
-          // Contenu
+          // UI
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 children: [
                   const SizedBox(height: 20),
-
-                  // Titre
                   const Text(
                     '🎉 Partie Terminée ! 🎉',
                     style: TextStyle(
@@ -146,10 +143,9 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
                     ),
                     textAlign: TextAlign.center,
                   ),
-
                   const SizedBox(height: 40),
 
-                  // Gagnant
+                  // Winner Card
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
@@ -161,7 +157,6 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
                         BoxShadow(
                           color: Colors.amber.withOpacity(0.5),
                           blurRadius: 20,
-                          spreadRadius: 3,
                         ),
                       ],
                     ),
@@ -173,16 +168,6 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
                           color: Colors.white,
                         ),
                         const SizedBox(height: 12),
-                        const Text(
-                          'GAGNANT',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 2,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
                         Text(
                           winnerName,
                           style: const TextStyle(
@@ -191,7 +176,6 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 4),
                         Text(
                           '$winnerScore points',
                           style: const TextStyle(
@@ -205,7 +189,7 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
 
                   const SizedBox(height: 40),
 
-                  // Scores détaillés
+                  // Scores List
                   Expanded(
                     child: Container(
                       padding: const EdgeInsets.all(20),
@@ -234,66 +218,38 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
                               itemCount: sortedEntries.length,
                               itemBuilder: (context, index) {
                                 final entry = sortedEntries[index];
-                                final playerName = _getWinnerName(entry.key);
-                                final isWinner = index == 0;
-
                                 return Container(
                                   margin: const EdgeInsets.only(bottom: 12),
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: isWinner
-                                        ? Colors.amber.withOpacity(0.2)
-                                        : Colors.white.withOpacity(0.05),
+                                    color: Colors.white.withOpacity(0.05),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: isWinner
-                                          ? Colors.amber
-                                          : Colors.white.withOpacity(0.1),
-                                      width: 2,
-                                    ),
                                   ),
                                   child: Row(
                                     children: [
-                                      Container(
-                                        width: 40,
-                                        height: 40,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: isWinner
-                                              ? Colors.amber
-                                              : Colors.grey.shade700,
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            '${index + 1}',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
+                                      Text(
+                                        '${index + 1}.',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                      const SizedBox(width: 16),
+                                      const SizedBox(width: 12),
                                       Expanded(
                                         child: Text(
-                                          playerName,
-                                          style: TextStyle(
+                                          _getWinnerName(entry.key),
+                                          style: const TextStyle(
                                             color: Colors.white,
                                             fontSize: 18,
-                                            fontWeight: isWinner
-                                                ? FontWeight.bold
-                                                : FontWeight.normal,
                                           ),
                                         ),
                                       ),
                                       Text(
                                         '${entry.value} pts',
-                                        style: TextStyle(
-                                          color: isWinner
-                                              ? Colors.amber
-                                              : Colors.white,
-                                          fontSize: 20,
+                                        style: const TextStyle(
+                                          color: Colors.amber,
+                                          fontSize: 18,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
@@ -310,78 +266,27 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
 
                   const SizedBox(height: 30),
 
-                  // Boutons
+                  // Buttons
                   Row(
                     children: [
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () async {
-                            // Réinitialiser le statut de la room pour permettre une nouvelle partie
-                            final roomProvider = context.read<RoomProvider>();
                             final sessionProvider = context
                                 .read<GameSessionProvider>();
-
-                            if (roomProvider.currentRoom != null) {
-                              try {
-                                debugPrint(
-                                  '🔄 Réinitialisation du statut de la room',
-                                );
-                                await Supabase.instance.client
-                                    .from('rooms')
-                                    .update({'status': 'waiting'})
-                                    .eq('id', roomProvider.currentRoom!.id);
-                              } catch (e) {
-                                debugPrint(
-                                  '⚠️ Erreur réinitialisation room: $e',
-                                );
-                              }
-                            }
-
-                            // Nettoyer la session
-                            debugPrint('🧹 Nettoyage de la session');
-                            sessionProvider.clearSession();
-
-                            // Retourner au hub
-                            if (mounted) {
+                            sessionProvider.clearSession(); // Clean
+                            if (mounted)
                               Navigator.popUntil(
                                 context,
                                 (route) => route.isFirst,
                               );
-                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.grey.shade800,
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
                           ),
                           child: const Text(
                             'Quitter',
-                            style: TextStyle(fontSize: 18, color: Colors.white),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // TODO: Implémenter "Rejouer"
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Rejouer - Bientôt disponible !'),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text(
-                            'Rejouer',
                             style: TextStyle(fontSize: 18, color: Colors.white),
                           ),
                         ),

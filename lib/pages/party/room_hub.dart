@@ -19,27 +19,33 @@ class RoomHub extends StatefulWidget {
 
 class _RoomHubState extends State<RoomHub> {
   int _previousParticipantCount = 0;
-  bool _hasNavigatedToGame = false; // Pour éviter la double navigation
-  DateTime? _hostMissingTimestamp; // Track when host went missing
-  static const _hostMissingGracePeriod = Duration(
-    seconds: 3,
-  ); // Grace period before ejecting
+  bool _hasNavigatedToGame = false;
+  DateTime? _hostMissingTimestamp;
+  static const _hostMissingGracePeriod = Duration(seconds: 3);
+  late RoomProvider _roomProvider;
 
   @override
   void initState() {
     super.initState();
-    final roomProvider = context.read<RoomProvider>();
-    _previousParticipantCount = roomProvider.participants.length;
-
-    // Use addPostFrameCallback to safely check state after build
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final roomProvider = context.read<RoomProvider>();
+      _previousParticipantCount = roomProvider.participants.length;
+
       if (roomProvider.currentRoom == null) {
+        final messenger = ScaffoldMessenger.of(context);
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           const SnackBar(content: Text('Erreur: Aucune room active.')),
         );
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _roomProvider = context.read<RoomProvider>();
   }
 
   void _playGames() async {
@@ -47,12 +53,10 @@ class _RoomHubState extends State<RoomHub> {
       final roomProvider = context.read<RoomProvider>();
       final sessionProvider = context.read<GameSessionProvider>();
 
-      // 1. Mettre à jour le statut de la room
       await roomProvider.startGame();
+      if (!mounted) return;
 
-      // 2. Créer la session de jeu
       final playerIds = roomProvider.participants.map((p) => p.id).toList();
-      // Force limit to 2 games max as per new requirement
       final int rawNbGames =
           roomProvider.currentRoom?.settings?['nb_games'] ?? 2;
       final int nbGames = rawNbGames > 2 ? 2 : rawNbGames;
@@ -63,19 +67,11 @@ class _RoomHubState extends State<RoomHub> {
         playerIds: playerIds,
       );
 
-      if (sessionId == null) {
+      if (!mounted) return;
+      if (sessionId == null)
         throw Exception('Impossible de créer la session de jeu');
-      }
 
-      // 3. Naviguer vers l'orchestrateur
-      if (mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => GameOrchestratorScreen(sessionId: sessionId),
-          ),
-        );
-      }
+      _navigateToGameOrchestrator(sessionId);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -85,17 +81,37 @@ class _RoomHubState extends State<RoomHub> {
     }
   }
 
-  late RoomProvider _roomProvider;
+  void _navigateToGameOrchestrator(String sessionId) {
+    // On marque qu'on a navigué pour bloquer l'auto-join
+    setState(() {
+      _hasNavigatedToGame = true;
+    });
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _roomProvider = context.read<RoomProvider>();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => GameOrchestratorScreen(sessionId: sessionId),
+      ),
+    ).then((_) {
+      // --- C'EST ICI QUE SE JOUE LA CORRECTION DE LA BOUCLE ---
+      if (mounted) {
+        final sessionProvider = context.read<GameSessionProvider>();
+        // Si la session est terminée (on revient des résultats ou via pushReplacement),
+        // ON NE REMET PAS le flag à false. On laisse bloqué pour éviter que le RoomHub ne relance.
+        if (sessionProvider.isCompleted) {
+          debugPrint("🛑 Retour au Hub après fin de partie. Auto-join bloqué.");
+          return;
+        }
+
+        // Sinon (retour arrière normal en cours de jeu), on autorise à relancer
+        setState(() {
+          _hasNavigatedToGame = false;
+        });
+      }
+    });
   }
 
   void _leaveRoom() async {
-    // If I am host, we might want to warn or delete room.
-    // For now, standard leave.
     await _roomProvider.leaveRoom();
     if (!mounted) return;
     Navigator.pop(context);
@@ -103,10 +119,7 @@ class _RoomHubState extends State<RoomHub> {
 
   @override
   void dispose() {
-    // Ensure we leave the room when the page is disposed
-    // This handles cases where the user exits via system back button, etc.
     if (_roomProvider.currentRoom != null) {
-      // Call leaveRoom without awaiting to avoid blocking dispose
       _roomProvider.leaveRoom().catchError((e) {
         debugPrint("Error leaving room on dispose: $e");
       });
@@ -116,7 +129,6 @@ class _RoomHubState extends State<RoomHub> {
 
   @override
   Widget build(BuildContext context) {
-    // Listen to provider changes
     final roomProvider = context.watch<RoomProvider>();
     final room = roomProvider.currentRoom;
     final players = roomProvider.participants;
@@ -126,19 +138,18 @@ class _RoomHubState extends State<RoomHub> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
-      // SKIP CHECKS if we're in a game to avoid false positives during transitions
       if (_hasNavigatedToGame || room?.status == 'playing') {
         return;
       }
 
-      // 1. Check if room was deleted (Host left)
+      // 1. Host left
       if (room == null) {
-        // Room was deleted, navigate back
+        final messenger = ScaffoldMessenger.of(context);
         Navigator.popUntil(
           context,
           (route) => route.isFirst || route.settings.name == '/home',
         );
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           const SnackBar(
             content: Text("L'hôte a quitté la partie. La room est fermée."),
             backgroundColor: Colors.red,
@@ -148,47 +159,37 @@ class _RoomHubState extends State<RoomHub> {
         return;
       }
 
-      // 2. Guest detects Host left (if participants list doesn't contain host)
+      // 2. Guest detects Host left
       if (!amIHost) {
         final bool hasHost = players.any((p) => p.isHost);
-
         if (!hasHost) {
-          // Start or continue grace period
           _hostMissingTimestamp ??= DateTime.now();
           final gracePeriodElapsed =
               DateTime.now().difference(_hostMissingTimestamp!) >
               _hostMissingGracePeriod;
 
-          // Only eject if grace period elapsed and we're in lobby/waiting status
           if (gracePeriodElapsed &&
-              (room?.status == 'waiting' || room?.status == 'lobby')) {
-            debugPrint(
-              '⚠️ Host missing for ${_hostMissingGracePeriod.inSeconds}s, ejecting guest',
-            );
+              (room.status == 'waiting' || room.status == 'lobby')) {
+            final messenger = ScaffoldMessenger.of(context);
             context.read<RoomProvider>().leaveLocalInfo();
             Navigator.popUntil(
               context,
               (route) => route.isFirst || route.settings.name == '/home',
             );
-            ScaffoldMessenger.of(context).showSnackBar(
+            messenger.showSnackBar(
               const SnackBar(
-                content: Text("L'hôte a quitté la partie. La room est fermée."),
+                content: Text("L'hôte a quitté la partie."),
                 backgroundColor: Colors.red,
-                duration: Duration(seconds: 4),
               ),
             );
             return;
           }
         } else {
-          // Host is back, reset grace period
-          if (_hostMissingTimestamp != null) {
-            debugPrint('✅ Host reconnected, resetting grace period');
-            _hostMissingTimestamp = null;
-          }
+          _hostMissingTimestamp = null;
         }
       }
 
-      // 3. Host detects Guest left (Notification only)
+      // 3. Host detects Guest left
       if (players.length < _previousParticipantCount) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -197,26 +198,30 @@ class _RoomHubState extends State<RoomHub> {
           ),
         );
       }
-      // Update counter for next frame
       _previousParticipantCount = players.length;
     });
 
-    // Check if game started - Auto navigate for guest
+    // --- LOGIC: AUTO JOIN GAME ---
+    // Si la room est en jeu et qu'on n'a pas encore navigué
     if (room != null && room.status == 'playing' && !_hasNavigatedToGame) {
-      // Marquer comme déjà navigué
-      _hasNavigatedToGame = true;
-
-      // Charger ou créer la session de jeu
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        if (!mounted) return;
+        if (!mounted || _hasNavigatedToGame) return;
 
+        // VERIFICATION DE SECURITE : Si on a déjà fini cette session localement, on n'y retourne pas
         final sessionProvider = context.read<GameSessionProvider>();
+        if (sessionProvider.isCompleted) return;
 
-        // Essayer de charger la session existante par room_id
+        // On marque immédiatement pour éviter les doubles appels
+        setState(() {
+          _hasNavigatedToGame = true;
+        });
+
         await sessionProvider.loadSessionByRoomId(room.id);
 
-        if (sessionProvider.currentSession != null && mounted) {
-          // Session trouvée, naviguer vers l'orchestrateur
+        if (!mounted) return;
+
+        if (sessionProvider.currentSession != null) {
+          // On appelle la méthode qui contient le .then() magique
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -225,42 +230,29 @@ class _RoomHubState extends State<RoomHub> {
               ),
             ),
           ).then((_) {
-            // Quand on revient de l'orchestrateur, réinitialiser le flag
             if (mounted) {
+              // Même logique de protection au retour
+              if (context.read<GameSessionProvider>().isCompleted) return;
               setState(() {
                 _hasNavigatedToGame = false;
               });
             }
           });
         } else {
-          // Session non trouvée (ne devrait pas arriver)
+          // Erreur de chargement
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Erreur: Session de jeu non trouvée'),
               backgroundColor: Colors.red,
             ),
           );
-          // Réinitialiser le flag en cas d'erreur
           setState(() {
             _hasNavigatedToGame = false;
           });
         }
       });
-    } else if (room != null && room.status != 'playing') {
-      // Si la room n'est plus en 'playing', réinitialiser le flag
-      if (_hasNavigatedToGame) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            setState(() {
-              _hasNavigatedToGame = false;
-            });
-          }
-        });
-      }
     }
 
-    // Convert RoomParticipant to AtomHub Player model if needed, or update AtomHub to use RoomParticipant.
-    // AtomHub expects List<Player>. Let's map.
     final atomPlayers = players
         .map(
           (p) => Player(
@@ -273,9 +265,6 @@ class _RoomHubState extends State<RoomHub> {
         )
         .toList();
 
-    // afficher atomPlayers
-    // debugPrint(atomPlayers.toString());
-
     final int nbGames = room?.settings?['nb_games'] ?? 0;
     final String roomCode = room?.code ?? '??????';
 
@@ -283,14 +272,12 @@ class _RoomHubState extends State<RoomHub> {
       body: Stack(
         children: [
           const BackgroundPage(pathBackground: "assets/images/carrefour.png"),
-
           AtomTitle(
             title: "Hub de la Partie",
             color: Colors.red,
             showBack: true,
             onBack: _leaveRoom,
           ),
-
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.only(top: 80.0, bottom: 20.0),
@@ -298,7 +285,6 @@ class _RoomHubState extends State<RoomHub> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    // ---- INFO ROOM CODE ----
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 24,
@@ -345,34 +331,24 @@ class _RoomHubState extends State<RoomHub> {
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 10),
-
-                    // ---- LISTE DES JOUEURS (AtomHub) ----
-                    // AtomHub expects specific Player class, check import
                     AtomHub(players: atomPlayers),
-
                     const SizedBox(height: 30),
-
-                    // ---- BOUTON LANCER LA PARTIE & MESSAGES D'ATTENTE ----
                     if (room?.status == 'playing') ...[
                       const CircularProgressIndicator(),
                       const Text("Lancement du jeu..."),
                     ] else if (amIHost && roomProvider.isRoomFull)
-                      // Host peut lancer si la room est pleine
                       AtomButton(
                         label: "Lancer la Partie",
                         onPressed: _playGames,
                         bgColor: const Color.fromARGB(255, 18, 184, 10),
                       )
                     else if (amIHost)
-                      // Host attend un adversaire
                       _WaitingMessage(
                         text: "En attente de l'adversaire...",
                         color: Colors.yellow,
                       )
                     else
-                      // Guest attend le Host
                       _WaitingMessage(
                         text: "En attente du Host pour lancer la partie...",
                         color: Colors.grey,
@@ -388,13 +364,10 @@ class _RoomHubState extends State<RoomHub> {
   }
 }
 
-// Widget privé pour simplifier l'affichage des messages d'attente
 class _WaitingMessage extends StatelessWidget {
   final String text;
   final Color color;
-
   const _WaitingMessage({required this.text, required this.color});
-
   @override
   Widget build(BuildContext context) {
     return Container(

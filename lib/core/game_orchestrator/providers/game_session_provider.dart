@@ -10,7 +10,7 @@ class GameSessionProvider extends ChangeNotifier {
   GameSession? _currentSession;
   bool _isLoading = false;
   String? _error;
-  StreamSubscription<GameSession>? _sessionSubscription;
+  StreamSubscription<GameSession?>? _sessionSubscription; // Type nullable
 
   // Getters
   GameSession? get currentSession => _currentSession;
@@ -40,10 +40,7 @@ class GameSessionProvider extends ChangeNotifier {
         playerIds: playerIds,
       );
 
-      // S'abonner aux changements en temps réel
       _subscribeToSession(_currentSession!.id);
-
-      // Passer le statut à "in_progress"
       await _service.updateStatus(_currentSession!.id, 'in_progress');
 
       return _currentSession!.id;
@@ -90,10 +87,8 @@ class GameSessionProvider extends ChangeNotifier {
     }
   }
 
-  /// Passer au jeu suivant
   Future<bool> moveToNextGame() async {
     if (_currentSession == null) return false;
-
     try {
       await _service.moveToNextGame(_currentSession!.id);
       return true;
@@ -103,10 +98,8 @@ class GameSessionProvider extends ChangeNotifier {
     }
   }
 
-  /// Enregistrer un résultat de jeu
   Future<bool> saveGameResult(GameResult result) async {
     if (_currentSession == null) return false;
-
     try {
       await _service.saveGameResult(
         sessionId: _currentSession!.id,
@@ -120,10 +113,8 @@ class GameSessionProvider extends ChangeNotifier {
     }
   }
 
-  /// Récupérer tous les résultats de la session
   Future<List<GameResult>> getResults() async {
     if (_currentSession == null) return [];
-
     try {
       return await _service.getSessionResults(_currentSession!.id);
     } catch (e) {
@@ -132,10 +123,8 @@ class GameSessionProvider extends ChangeNotifier {
     }
   }
 
-  /// Marquer la session comme terminée
   Future<void> completeSession() async {
     if (_currentSession == null) return;
-
     try {
       await _service.updateStatus(_currentSession!.id, 'completed');
     } catch (e) {
@@ -151,23 +140,32 @@ class GameSessionProvider extends ChangeNotifier {
         .watchSession(sessionId)
         .listen(
           (session) {
-            _currentSession = session;
-            notifyListeners();
+            if (session == null) {
+              // Session supprimée ou vide: on nettoie sans erreur
+              _currentSession = null;
+              notifyListeners();
+            } else {
+              _currentSession = session;
+              notifyListeners();
+            }
           },
           onError: (error) {
             debugPrint('❌ Erreur stream session: $error');
-            _setError('Erreur synchronisation: $error');
+            if (error.toString().contains('Session not found')) {
+              _currentSession = null;
+              notifyListeners();
+            } else {
+              _setError('Erreur synchronisation: $error');
+            }
           },
         );
   }
 
-  /// Se désabonner du stream
   void _unsubscribeFromSession() {
     _sessionSubscription?.cancel();
     _sessionSubscription = null;
   }
 
-  /// Nettoyer la session locale
   void clearSession() {
     _unsubscribeFromSession();
     _currentSession = null;
@@ -175,7 +173,6 @@ class GameSessionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Helpers privés
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
