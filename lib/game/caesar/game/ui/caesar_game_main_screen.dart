@@ -74,7 +74,7 @@ class _CaesarGamePageState extends State<CaesarGamePage> {
   Widget _buildGameContent(CaesarGameState state, bool isInputer) {
     
     if (state.isGameOver) {
-      return const CaesarGameResultScreen(finalResult: true); // Un écran de fin définitive
+      return const CaesarGameResultScreen(finalResult: true);
     }
 
 

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:game_v1/game/caesar/core/constants.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/game_enums.dart';
 import '../../data/services/communication_service.dart';
 import '../models/caesar_state_model.dart';
 import '../../data/models/game_data_model.dart';
-
-import 'package:game_v1/game/caesar/game/state/caesar_game_notifier.dart';
 
 class CaesarGameNotifier extends ChangeNotifier {
   final String gameId;
@@ -67,17 +66,38 @@ class CaesarGameNotifier extends ChangeNotifier {
     }
   }
 
-  Future<void> goToResult() async {
-    if (_isLoading) return;
+  // ---------- fonctions de gameplays ------------
+  /// Met à jour les données pour afficher l'écran de résultat.
+  /// la fonction retourne un objet indiquant si le jeu est définitivement terminé.
+  Future<({bool gameOver})> goToResult() async {
+    if (_isLoading) return (gameOver: false);
     _setLoading(true);
+
     try {
-      // On active le flag de fin de manche, mais game_over RESTE à false
-      await _commService.updateGameDataField(key: 'isRoundOver', value: true);
+      // CONDITION CORRIGÉE : 
+      // Si on vient de finir le round 2, alors isFinal devient TRUE
+      final bool isFinal = _state.gameRound >= kMaxRounds;
+
+      await _commService.updateGameDataBatch({
+        'isRoundOver': true,
+        'game_over': isFinal, // C'est ici que Supabase recevra enfin "true"
+      });
+
+      _state = _state.copyWith(
+        isRoundOver: true,
+        isGameOver: isFinal,
+      );
+
+      return (gameOver: isFinal);
+    } catch (e) {
+      debugPrint("Erreur goToResult: $e");
+      return (gameOver: false);
     } finally {
       _setLoading(false);
     }
   }
 
+  /// update all the data related stuff to inform the other page to go to the next gamepage
   Future<void> nextRound() async {
     if (_isLoading) return;
     _setLoading(true);
@@ -95,6 +115,14 @@ class CaesarGameNotifier extends ChangeNotifier {
       _setLoading(false);
     }
   }
+
+  //NATHAN
+  Future<void> finishGame() async {
+    //cette partie de la fonction a accès au variable du jeu (score par exemple)
+    // int scoreActuel = _state.gameData.score;
+  }
+
+
 
   /// ACTION : Envoi du score à Supabase
   Future<void> submitScore(int newScore, {bool finishGame = false}) async {
@@ -134,26 +162,34 @@ class CaesarGameNotifier extends ChangeNotifier {
       }
     }
 
+    // Mise à jour initiale de currentState à partir des métadonnées (évite blocage si 2 joueurs déjà en DB)
+    final playerBFromMeta = gameMetadata?['player_b_id'] as String?;
+    _state = _state.copyWith(
+      localPlayerId: _localPlayerId,
+      currentState: _determineState(
+        playerBFromMeta, _state.isGameOver
+        ),
+    );
+    notifyListeners();
+
     // on met en place l'écouteur qui met à jour les données en direct
     _commService.gameStream.listen((row) {
       if (row.isEmpty) return;
 
-      final playerBId = row['player_b_id'];
       final jsonData = row['data'] as Map<String, dynamic>? ?? {};
-      
-      final bool gameOver = jsonData['game_over'] ?? false;
-      final bool roundOver = jsonData['isRoundOver'] ?? false;
-      final int currentRound = jsonData['round'] ?? 1;
+      final playerBId = row['player_b_id'] as String?;
 
-      final gameData = CaesarGameDataModel.fromJson(jsonData);
+      final bool dbGameOver = jsonData['game_over'] ?? false;
+      final bool dbRoundOver = jsonData['isRoundOver'] ?? false;
+      final int dbRound = jsonData['round'] ?? 1;
+      final int dbScore = jsonData['score'] ?? 0;
 
       _state = _state.copyWith(
-        localPlayerId: _localPlayerId,
-        currentState: _determineState(playerBId, gameOver),
-        gameData: gameData,
-        isGameOver: gameOver,
-        isRoundOver: roundOver, // <--- CRUCIAL : Informe l'UI que la manche est finie
-        gameRound: currentRound, // <--- CRUCIAL : Pour l'échange des rôles
+        isGameOver: dbGameOver,
+        isRoundOver: dbRoundOver,
+        gameRound: dbRound,
+        gameData: _state.gameData.copyWith(score: dbScore),
+        currentState: _determineState(playerBId, dbGameOver),
       );
       notifyListeners();
     });

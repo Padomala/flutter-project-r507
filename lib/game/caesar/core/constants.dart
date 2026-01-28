@@ -1,10 +1,12 @@
+
+
+const int kMaxRounds = 2;
+const int kCaesarWaitMillisecondAfterResponse = 1500;
+const int kCaesarPointPerGoodAnswer = 10;
+
 // Contient les questions pour le jeu de césar, 
 // Chaque question contient "question", "questionWord", "answerWord"
-
-const int kCaesarNumberOfRounds = 2;
-const int waitMillisecondAfterResponse = 1500;
-
-
+// aussi, les questions doivent pouvoir être répondu en un seul mot (s'inspirer de ce qui existe déjà).
 const List<Map<String, String>> kCaesarQuestions = [
   // Pays (capitales)
   {

@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:game_v1/game/caesar/game/state/caesar_game_notifier.dart';
-<<<<<<< Updated upstream
 // import 'package:game_v1/game/microphone/game/ui/audio_game_main_screen.dart';
-=======
-import 'package:game_v1/game/microphone/game/ui/audio_game_main_screen.dart';
->>>>>>> Stashed changes
 import 'package:game_v1/pages/shop/shop_page.dart';
 import 'pages/home_page.dart';
 import 'package:provider/provider.dart';
@@ -77,11 +73,7 @@ class MyApp extends StatelessWidget {
             create: (_) => CaesarGameNotifier(gameId: "a1b2c3d4-0000-0000-0000-000000000001"),
             child: const CaesarGamePage(),
           ),
-<<<<<<< Updated upstream
         // '/game/microphone_game': (context) => MicrophoneGamePage(),
-=======
-        '/game/microphone_game': (context) => MicrophoneGamePage(),
->>>>>>> Stashed changes
         '/guessing_game': (context) => ChangeNotifierProvider(
           create: (context) => GuessingGameNotifier(gameId: 'a1b2c3d4-0000-0000-0000-000000000000'),
           child: const GuessingGameScreen(gameId: 'a1b2c3d4-0000-0000-0000-000000000000'),
