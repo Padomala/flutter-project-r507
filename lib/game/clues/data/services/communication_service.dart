@@ -45,13 +45,14 @@ class CommunicationService {
     return response['data'] as Map<String, dynamic>;
   }
 
-/**
- * Crée la ligne de données initiale complète
- */
-/**
-   * Crée la ligne de données initiale complète
-   */
-  Future<void> createGameData(Map<String, dynamic> initialData) async {
+  /// Initialise une nouvelle entrée dans la table 'game_data' pour cette partie.
+  ///
+  /// Enregistre l'utilisateur actuel comme `player_a_id`.
+  /// Utilise un `upsert` avec [onConflict] pour éviter les doublons sur l'ID de partie.
+  Future<void> createGameData(
+    Map<String, dynamic> initialData, {
+    String? playerBId,
+  }) async {
     final userId = _client.auth.currentUser?.id;
 
     if (userId == null) {
@@ -151,8 +152,10 @@ class CommunicationService {
           .maybeSingle();
 
       if (response == null || response['data'] == null) return;
-      
-      Map<String, dynamic> currentData = Map<String, dynamic>.from(response['data']); // Copie mutable
+
+      Map<String, dynamic> currentData = Map<String, dynamic>.from(
+        response['data'],
+      ); // Copie mutable
       currentData[key] = value;
 
       await _client
@@ -174,9 +177,11 @@ class CommunicationService {
           .maybeSingle();
 
       if (response == null || response['data'] == null) return;
-      
-      Map<String, dynamic> currentData = Map<String, dynamic>.from(response['data']);
-      
+
+      Map<String, dynamic> currentData = Map<String, dynamic>.from(
+        response['data'],
+      );
+
       // On applique toutes les modifications
       updates.forEach((key, value) {
         currentData[key] = value;
