@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../widget/atoms/atom_text_field.dart';
-import 'package:provider/provider.dart'; // Import Provider
-import 'package:game_v1/store/provider/user_provider.dart'; // Import your UserProvider
+import 'package:provider/provider.dart';
+import 'package:game_v1/store/provider/user_provider.dart';
 import '../../app_colors.dart';
 import '../../widget/atoms/atom_button.dart';
 import '../../widget/atoms/atom_background_page.dart';
 import '../../core/utils/avatar_helper.dart';
+import '../../core/utils/avatar_assets.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -20,21 +21,6 @@ class _ProfilePageState extends State<Profile> {
   late TextEditingController _emailController;
 
   String? _selectedAvatarUrl;
-
-  final List<String> _avatarAssets = [
-    'assets/images/avatars/cat1.jpg',
-    'assets/images/avatars/cat2.jpg',
-    'assets/images/avatars/cat3.jpg',
-    'assets/images/avatars/cat4.jpg',
-    'assets/images/avatars/dog1.jpg',
-    'assets/images/avatars/dog2.jpg',
-    'assets/images/avatars/dog3.jpg',
-    'assets/images/avatars/dog4.jpg',
-    'assets/images/avatars/rab1.jpg',
-    'assets/images/avatars/rab2.jpg',
-    'assets/images/avatars/rab3.jpg',
-    'assets/images/avatars/rab4.jpg',
-  ];
 
   @override
   void initState() {
@@ -55,7 +41,7 @@ class _ProfilePageState extends State<Profile> {
     try {
       await context.read<UserProvider>().logout();
       if (mounted) {
-         // Pop everything until the first route (ROOT), which is SupabaseGate -> HomePage
+        // Pop everything until the first route (ROOT), which is SupabaseGate -> HomePage
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (e) {
@@ -68,7 +54,7 @@ class _ProfilePageState extends State<Profile> {
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    
+
     // 1. Listen to the UserProvider
     final userProvider = context.watch<UserProvider>();
     final user = userProvider.user;
@@ -80,11 +66,11 @@ class _ProfilePageState extends State<Profile> {
       // Also sync selected avatar only if we haven't selected a new one yet?
       // Actually, when entering edit mode, we want to start with current avatar.
     }
-    
+
     // Determine which image to show in the big circle
     // If editing and user picked one, show that. Else show user's current.
-    final displayAvatarUrl = (_isEditing && _selectedAvatarUrl != null) 
-        ? _selectedAvatarUrl 
+    final displayAvatarUrl = (_isEditing && _selectedAvatarUrl != null)
+        ? _selectedAvatarUrl
         : user.avatarUrl;
 
     return Scaffold(
@@ -134,13 +120,19 @@ class _ProfilePageState extends State<Profile> {
                     CircleAvatar(
                       radius: 50,
                       backgroundColor: Colors.white,
-                      backgroundImage: AvatarHelper.getAvatarImageOrNull(displayAvatarUrl),
-                      child: displayAvatarUrl == null 
-                          ? const Icon(Icons.person, size: 50, color: Colors.blue) 
+                      backgroundImage: AvatarHelper.getAvatarImageOrNull(
+                        displayAvatarUrl,
+                      ),
+                      child: displayAvatarUrl == null
+                          ? const Icon(
+                              Icons.person,
+                              size: 50,
+                              color: Colors.blue,
+                            )
                           : null,
                     ),
                     const SizedBox(height: 10),
-                    
+
                     // Display Name (Read-only view at top)
                     Text(
                       user.name.isEmpty ? 'Utilisateur' : user.name,
@@ -156,19 +148,25 @@ class _ProfilePageState extends State<Profile> {
                     if (_isEditing) ...[
                       const Align(
                         alignment: Alignment.centerLeft,
-                        child: Text("Choisir un avatar :", style: TextStyle(fontWeight: FontWeight.bold)),
+                        child: Text(
+                          "Choisir un avatar :",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
                       const SizedBox(height: 10),
                       SizedBox(
                         height: 70,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
-                          itemCount: _avatarAssets.length,
+                          itemCount: AvatarAssets.all.length,
                           itemBuilder: (context, index) {
-                            final path = _avatarAssets[index];
-                            final isSelected = (_selectedAvatarUrl == path) || 
-                                              (_selectedAvatarUrl == null && user.avatarUrl == path);
-                            
+                            final path = AvatarAssets.all[index];
+
+                            final isSelected =
+                                (_selectedAvatarUrl == path) ||
+                                (_selectedAvatarUrl == null &&
+                                    user.avatarUrl == path);
+
                             return GestureDetector(
                               onTap: () {
                                 setState(() {
@@ -177,14 +175,20 @@ class _ProfilePageState extends State<Profile> {
                               },
                               child: Container(
                                 margin: const EdgeInsets.only(right: 12),
-                                padding: const EdgeInsets.all(2), // border width
+                                padding: const EdgeInsets.all(
+                                  2,
+                                ), // border width
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  border: isSelected ? Border.all(color: Colors.blue, width: 3) : null,
+                                  border: isSelected
+                                      ? Border.all(color: Colors.blue, width: 3)
+                                      : null,
                                 ),
                                 child: CircleAvatar(
                                   radius: 30,
-                                  backgroundImage: AvatarHelper.getAvatarImage(path),
+                                  backgroundImage: AvatarHelper.getAvatarImage(
+                                    path,
+                                  ),
                                 ),
                               ),
                             );
@@ -203,7 +207,7 @@ class _ProfilePageState extends State<Profile> {
                       enabled: _isEditing,
                     ),
                     const SizedBox(height: 15),
-                    
+
                     // Email is usually read-only
                     CustomTextField(
                       label: "EMAIL",
@@ -211,7 +215,7 @@ class _ProfilePageState extends State<Profile> {
                       icon: Icons.email,
                       fieldType: EnumFieldType.email,
                       controller: _emailController,
-                      enabled: false, 
+                      enabled: false,
                     ),
                     const SizedBox(height: 15),
 
@@ -225,9 +229,10 @@ class _ProfilePageState extends State<Profile> {
                             try {
                               await context.read<UserProvider>().updateProfile(
                                 username: _usernameController.text.trim(),
-                                avatarUrl: _selectedAvatarUrl, // Pass selected avatar
+                                avatarUrl:
+                                    _selectedAvatarUrl, // Pass selected avatar
                               );
-                              
+
                               if (context.mounted) {
                                 setState(() {
                                   _isEditing = false;
@@ -235,7 +240,9 @@ class _ProfilePageState extends State<Profile> {
                                 });
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Modifications enregistrées !'),
+                                    content: Text(
+                                      'Modifications enregistrées !',
+                                    ),
                                     backgroundColor: Colors.green,
                                   ),
                                 );
@@ -261,7 +268,7 @@ class _ProfilePageState extends State<Profile> {
                         height: 80,
                       ),
                     ),
-                    
+
                     const SizedBox(height: 15),
 
                     // --- NEW: LOGOUT BUTTON ---
@@ -271,89 +278,19 @@ class _ProfilePageState extends State<Profile> {
                         label: 'SE DÉCONNECTER',
                         onPressed: _onLogout,
                         // Assuming you have a red color, otherwise use Colors.red
-                        bgColor: Colors.redAccent, 
+                        bgColor: Colors.redAccent,
                         width: double.infinity,
                         height: 60, // Slightly smaller than primary action
                       ),
                     ),
 
                     const SizedBox(height: 20),
-
-                    // Statistiques
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(15),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withAlpha(12),
-                            blurRadius: 5,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Column(
-                        children: [
-                          Text(
-                            'Statistiques',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              Column(
-                                children: [
-                                  Text(
-                                    '12',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text('Parties jouées'),
-                                ],
-                              ),
-                              Column(
-                                children: [
-                                  Text(
-                                    '8',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text('Victoires'),
-                                ],
-                              ),
-                              Column(
-                                children: [
-                                  Text(
-                                    '4',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text('Défaites'),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
               ),
             ),
           ),
-          
+
           // Back Button (Moved to end for Z-Index)
           Positioned(
             top: 60,
@@ -361,9 +298,7 @@ class _ProfilePageState extends State<Profile> {
             child: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
               // Ensure we have a background circle so it's visible over any content
-               style: IconButton.styleFrom(
-                backgroundColor: Colors.black26, 
-              ),
+              style: IconButton.styleFrom(backgroundColor: Colors.black26),
               onPressed: () => Navigator.pushNamed(context, '/home'),
             ),
           ),
