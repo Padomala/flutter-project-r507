@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:game_v1/game/microphone/game/ui/audio_game_main_screen.dart';
+import 'package:game_v1/game/caesar/game/state/caesar_game_notifier.dart';
+import 'package:game_v1/game/caesar/game/ui/caesar_game_main_screen.dart';
 import 'package:game_v1/pages/shop/shop_page.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'pages/home_page.dart';
@@ -92,7 +93,7 @@ class MyApp extends StatelessWidget {
         // },
         '/register': (context) => Register(),
         // '/game/caesar_game': (context) => CaesarGamePage(),
-        '/game/microphone_game': (context) => MicrophoneGamePage(),
+        // '/game/microphone_game': (context) => MicrophoneGamePage(),
         // '/guessing_game': (context) => ChangeNotifierProvider(
         //   create: (context) => GuessingGameNotifier(
         //     gameId: 'a1b2c3d4-0000-0000-0000-000000000000',
@@ -101,7 +102,10 @@ class MyApp extends StatelessWidget {
         //     gameId: 'a1b2c3d4-0000-0000-0000-000000000000',
         //   ),
         // ),
-        // '/game/caesar_game': (context) => CaesarGamePage(),
+        '/game/caesar_game': (context) => ChangeNotifierProvider(
+            create: (_) => CaesarGameNotifier(gameId: "a1b2c3d4-0000-0000-0000-000000000001"),
+            child: const CaesarGamePage(),
+          ),
         '/guessing_game': (context) {
           final args =
               ModalRoute.of(context)!.settings.arguments
