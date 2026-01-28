@@ -20,6 +20,10 @@ class RoomHub extends StatefulWidget {
 class _RoomHubState extends State<RoomHub> {
   int _previousParticipantCount = 0;
   bool _hasNavigatedToGame = false; // Pour éviter la double navigation
+  DateTime? _hostMissingTimestamp; // Track when host went missing
+  static const _hostMissingGracePeriod = Duration(
+    seconds: 3,
+  ); // Grace period before ejecting
 
   @override
   void initState() {
@@ -122,6 +126,11 @@ class _RoomHubState extends State<RoomHub> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
+      // SKIP CHECKS if we're in a game to avoid false positives during transitions
+      if (_hasNavigatedToGame || room?.status == 'playing') {
+        return;
+      }
+
       // 1. Check if room was deleted (Host left)
       if (room == null) {
         // Room was deleted, navigate back
@@ -142,21 +151,40 @@ class _RoomHubState extends State<RoomHub> {
       // 2. Guest detects Host left (if participants list doesn't contain host)
       if (!amIHost) {
         final bool hasHost = players.any((p) => p.isHost);
-        // If no host is found, we must exit
-        if (!hasHost && room?.status != 'playing') {
-          context.read<RoomProvider>().leaveLocalInfo();
-          Navigator.popUntil(
-            context,
-            (route) => route.isFirst || route.settings.name == '/home',
-          );
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("L'hôte a quitté la partie. La room est fermée."),
-              backgroundColor: Colors.red,
-              duration: Duration(seconds: 4),
-            ),
-          );
-          return;
+
+        if (!hasHost) {
+          // Start or continue grace period
+          _hostMissingTimestamp ??= DateTime.now();
+          final gracePeriodElapsed =
+              DateTime.now().difference(_hostMissingTimestamp!) >
+              _hostMissingGracePeriod;
+
+          // Only eject if grace period elapsed and we're in lobby/waiting status
+          if (gracePeriodElapsed &&
+              (room?.status == 'waiting' || room?.status == 'lobby')) {
+            debugPrint(
+              '⚠️ Host missing for ${_hostMissingGracePeriod.inSeconds}s, ejecting guest',
+            );
+            context.read<RoomProvider>().leaveLocalInfo();
+            Navigator.popUntil(
+              context,
+              (route) => route.isFirst || route.settings.name == '/home',
+            );
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("L'hôte a quitté la partie. La room est fermée."),
+                backgroundColor: Colors.red,
+                duration: Duration(seconds: 4),
+              ),
+            );
+            return;
+          }
+        } else {
+          // Host is back, reset grace period
+          if (_hostMissingTimestamp != null) {
+            debugPrint('✅ Host reconnected, resetting grace period');
+            _hostMissingTimestamp = null;
+          }
         }
       }
 
