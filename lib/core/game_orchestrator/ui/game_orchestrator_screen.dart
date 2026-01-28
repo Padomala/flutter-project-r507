@@ -122,10 +122,20 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
 
     // 1. Transition
     await _showTransition();
+
+    // --- CORRECTION ICI ---
     if (!mounted || _isExiting) return;
 
-    // 2. Lancement du jeu
-    final currentGame = provider.currentSession!.currentGame;
+    // IMPORTANT : On doit revérifier si la session est null après le await
+    // car elle a pu être supprimée pendant l'animation de transition.
+    final sessionAfterTransition = provider.currentSession;
+    if (sessionAfterTransition == null) {
+      debugPrint('⚠️ Session perdue pendant la transition, arrêt séquence.');
+      return;
+    }
+
+    // 2. Lancement du jeu (On utilise la variable locale sécurisée)
+    final currentGame = sessionAfterTransition.currentGame;
     debugPrint('🎮 Lancement UI Jeu: ${currentGame.gameType}');
 
     try {
