@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-<<<<<<< HEAD
-=======
 
 import '../../core/constants.dart';
->>>>>>> advancedRoomTest
 import '../../core/game_enums.dart';
 import '../state/guessing_game_notifier.dart';
 import '../models/guessing_state_model.dart';
@@ -42,13 +39,10 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
     final isLoading = context.select<GuessingGameNotifier, bool>(
       (n) => n.isLoading,
     );
-<<<<<<< HEAD
-=======
 
     if (state.isGameOver) {
       return _buildGameOverPopup(context, notifier);
     }
->>>>>>> advancedRoomTest
 
     return Scaffold(
       body: Stack(
@@ -62,19 +56,15 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
               ),
             ),
           ),
-<<<<<<< HEAD
-          Container(color: Colors.black.withAlpha(70)),
-=======
           Container(
             color: Colors.black.withOpacity(0.4),
           ), // Assombrir un peu plus
->>>>>>> advancedRoomTest
           // 2. BOUTON RETOUR
           Positioned(
             top: 40,
             left: 20,
             child: CircleAvatar(
-              backgroundColor: Colors.white.withAlpha(100),
+              backgroundColor: Colors.white.withOpacity(0.8),
               child: IconButton(
                 icon: const Icon(
                   Icons.arrow_back,
@@ -122,11 +112,7 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
                   borderRadius: BorderRadius.circular(25),
                   boxShadow: [
                     BoxShadow(
-<<<<<<< HEAD
-                      color: Colors.black.withAlpha(70),
-=======
                       color: Colors.black.withOpacity(0.3),
->>>>>>> advancedRoomTest
                       blurRadius: 15,
                       offset: const Offset(0, 8),
                     ),
@@ -253,13 +239,9 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
         ),
 
         const SizedBox(height: 30),
-<<<<<<< HEAD
-        const LinearProgressIndicator(color: AppColors.yellow),
-=======
         const LinearProgressIndicator(
           color: AppColors.yellow,
         ), // Juste pour l'animation visuelle
->>>>>>> advancedRoomTest
         const SizedBox(height: 10),
         const Text(
           "L'autre joueur essaye de deviner...",
@@ -339,17 +321,6 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
 
         const SizedBox(height: 30),
         _buildStyledButton(
-<<<<<<< HEAD
-          isLastRound ? 'JEU SUIVANT' : 'MANCHE SUIVANTE',
-          isLoading,
-          () {
-            if (isLastRound) {
-              final totalScore = state.gameData.score;
-
-              final gameResult = {'finished': true, 'score': totalScore};
-
-              Navigator.pop(context, gameResult);
-=======
           isLastRound ? 'VOIR LE SCORE FINAL' : 'MANCHE SUIVANTE',
           isLoading,
           () {
@@ -357,7 +328,6 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
               // On appelle proceedToNextStep qui va mettre game_over à true
               // Cela déclenchera l'affichage du popup pour les 2 joueurs
               notifier.proceedToNextStep();
->>>>>>> advancedRoomTest
             } else {
               notifier.proceedToNextStep();
             }
@@ -445,8 +415,6 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-<<<<<<< HEAD
-=======
           ),
         ),
         child: isLoading
@@ -520,26 +488,8 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
                 ],
               ),
             ),
->>>>>>> advancedRoomTest
           ),
-        ),
-        child: isLoading
-            ? const SizedBox(
-                height: 25,
-                width: 25,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 3,
-                ),
-              )
-            : Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
-                ),
-              ),
+        ],
       ),
     );
   }
