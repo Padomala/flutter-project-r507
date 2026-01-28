@@ -8,7 +8,7 @@ class GameSessionService {
   final SupabaseClient _client = Supabase.instance.client;
 
   // Liste des jeux disponibles
-  static const List<String> availableGames = ['clues', 'caesar', 'labyrinthe'];
+  static const List<String> availableGames = ['clues', 'hot_cold'];
 
   /// Créer une session de jeu
   Future<GameSession> createSession({
@@ -50,8 +50,16 @@ class GameSessionService {
 
   /// Générer une liste aléatoire de jeux
   List<GameConfig> _generateRandomGames(int count) {
-    final random = Random();
+    // If we want a variety, shuffle and take
+    if (count <= availableGames.length) {
+      final shuffled = List<String>.from(availableGames)..shuffle();
+      return List.generate(count, (index) {
+        return GameConfig(gameType: shuffled[index], order: index);
+      });
+    }
 
+    // If we need more than available, random pick (or cycle)
+    final random = Random();
     return List.generate(count, (index) {
       final gameType = availableGames[random.nextInt(availableGames.length)];
       return GameConfig(gameType: gameType, order: index);

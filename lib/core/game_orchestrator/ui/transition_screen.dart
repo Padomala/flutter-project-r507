@@ -27,23 +27,23 @@ class _TransitionScreenState extends State<TransitionScreen>
   @override
   void initState() {
     super.initState();
-    
+
     // Animation pour le compte à rebours
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
+
     _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
     );
-    
+
     _startCountdown();
   }
 
   void _startCountdown() {
     _animationController.forward();
-    
+
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_countdown > 1) {
         setState(() {
@@ -53,10 +53,13 @@ class _TransitionScreenState extends State<TransitionScreen>
         _animationController.forward();
       } else {
         timer.cancel();
+        // Capture navigator before async gap
+        final navigator = Navigator.of(context);
+
         // Attendre un peu avant de fermer l'écran
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted) {
-            Navigator.pop(context);
+            navigator.pop();
           }
         });
       }
@@ -119,7 +122,10 @@ class _TransitionScreenState extends State<TransitionScreen>
               children: [
                 // Indicateur de progression
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
@@ -138,18 +144,18 @@ class _TransitionScreenState extends State<TransitionScreen>
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 60),
-                
+
                 // Icône du jeu
                 Icon(
                   _getGameIcon(widget.gameType),
                   size: 80,
                   color: Colors.lightBlueAccent,
                 ),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // Nom du jeu
                 Text(
                   _getGameName(widget.gameType),
@@ -160,9 +166,9 @@ class _TransitionScreenState extends State<TransitionScreen>
                   ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: 80),
-                
+
                 // Compte à rebours animé
                 ScaleTransition(
                   scale: _scaleAnimation,
@@ -172,10 +178,7 @@ class _TransitionScreenState extends State<TransitionScreen>
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
-                        colors: [
-                          Colors.lightBlueAccent,
-                          Colors.blue.shade700,
-                        ],
+                        colors: [Colors.lightBlueAccent, Colors.blue.shade700],
                       ),
                       boxShadow: [
                         BoxShadow(
@@ -197,9 +200,9 @@ class _TransitionScreenState extends State<TransitionScreen>
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 40),
-                
+
                 // Message
                 Text(
                   'Préparez-vous !',

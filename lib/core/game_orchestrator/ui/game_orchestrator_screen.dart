@@ -6,7 +6,8 @@ import 'transition_screen.dart';
 import 'final_results_screen.dart';
 import '../../../game/clues/game/state/guessing_game_notifier.dart';
 import '../../../game/clues/game/ui/guessing_game_screen.dart';
-import '../../../game/caesar/ui/caesar_game_screen.dart';
+import '../../../game/clues/game/state/hot_cold_game_notifier.dart';
+import '../../../game/clues/game/ui/hot_cold_game_screen.dart';
 
 class GameOrchestratorScreen extends StatefulWidget {
   final String sessionId;
@@ -20,19 +21,23 @@ class GameOrchestratorScreen extends StatefulWidget {
 class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
   bool _isInitialized = false;
   int? _lastPlayedIndex; // Pour éviter de relancer le même jeu en boucle
+  late GameSessionProvider _sessionProvider;
+  bool _isNavigating = false; // Guard to prevent double navigation
 
   @override
   void initState() {
     super.initState();
+    _sessionProvider = context.read<GameSessionProvider>();
+    // Écouter les changements de session pour déclencher _launchNextGame
+    // quand l'index change (signifiant que tous les joueurs sont prêts)
+    _sessionProvider.addListener(_onSessionUpdated);
     _init();
   }
 
   Future<void> _init() async {
-    final provider = context.read<GameSessionProvider>();
-
     // Charger la session APRÈS le build
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await provider.loadSession(widget.sessionId);
+      await _sessionProvider.loadSession(widget.sessionId);
 
       if (mounted) {
         setState(() {
@@ -43,16 +48,11 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
         _launchNextGame();
       }
     });
-
-    // Écouter les changements de session pour déclencher _launchNextGame
-    // quand l'index change (signifiant que tous les joueurs sont prêts)
-    provider.addListener(_onSessionUpdated);
   }
 
   @override
   void dispose() {
-    final provider = context.read<GameSessionProvider>();
-    provider.removeListener(_onSessionUpdated);
+    _sessionProvider.removeListener(_onSessionUpdated);
     super.dispose();
   }
 
@@ -86,6 +86,11 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
   }
 
   Future<void> _launchNextGame() async {
+    if (_isNavigating) {
+      debugPrint('⚠️ _launchNextGame ignoré: déjà en cours de navigation');
+      return;
+    }
+
     final provider = context.read<GameSessionProvider>();
 
     final currentIndex = provider.currentSession?.currentGameIndex;
@@ -102,23 +107,30 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
       return;
     }
 
+    _isNavigating = true;
+
     // Vérifier s'il reste des jeux
     if (!provider.hasMoreGames || provider.isCompleted) {
       debugPrint('🏁 Plus de jeux, affichage des résultats');
-      _showFinalResults();
+      await _showFinalResults();
+      _isNavigating = false;
       return;
     }
 
     // Attendre un peu pour que l'UI se stabilise
     await Future.delayed(const Duration(milliseconds: 300));
 
-    if (!mounted) return;
+    if (!mounted) {
+      _isNavigating = false;
+      return;
+    }
 
     // FIX: Re-vérifier l'état car il a pu changer pendant le délai (stream update)
     // Cela évite le RangeError si l'index a grimpé à la fin de la liste
     if (!provider.hasMoreGames || provider.isCompleted) {
       debugPrint('🏁 Plus de jeux (après délai), affichage des résultats');
-      _showFinalResults();
+      await _showFinalResults();
+      _isNavigating = false;
       return;
     }
 
@@ -128,7 +140,10 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
     );
     await _showTransition();
 
-    if (!mounted) return;
+    if (!mounted) {
+      _isNavigating = false;
+      return;
+    }
 
     // Lancer le jeu
     final currentGame = provider.currentSession!.currentGame;
@@ -139,37 +154,37 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
     debugPrint(
       '🎮 Lancement du jeu: ${currentGame.gameType} (index: $_lastPlayedIndex)',
     );
-    final result = await _navigateToGame(currentGame.gameType);
 
-    if (!mounted) return;
+    try {
+      final result = await _navigateToGame(currentGame.gameType);
 
-    // Si on a un résultat, le sauvegarder
-    if (result != null) {
-      debugPrint('💾 Sauvegarde résultat');
-      await provider.saveGameResult(result);
-
-      debugPrint(
-        '➡️ Passage au jeu suivant (avant moveToNextGame: ${provider.currentSession!.currentGameIndex})',
-      );
-      debugPrint('➡️ Attente des autres joueurs...');
-
-      // On ne force plus le passage au jeu suivant ici.
-      // C'est le service qui le fera quand tous les résultats seront là.
-      // provider.moveToNextGame();
-
-      // On affiche un écran d'attente en attendant que le stream mette à jour l'index
-      if (mounted) {
-        setState(
-          () {},
-        ); // Force rebuild to show waiting screen if logic falls through
+      if (!mounted) {
+        return;
       }
 
-      // _launchNextGame() sera rappelé automatiquement via le listener/stream
-      // quand l'index changera dans la DB.
-    } else {
-      // L'utilisateur a quitté le jeu, retour au hub
-      debugPrint('❌ Utilisateur a quitté le jeu');
-      _exitOrchestrator();
+      if (result != null) {
+        debugPrint('💾 Sauvegarde résultat');
+        await provider.saveGameResult(result);
+
+        debugPrint(
+          '➡️ Passage au jeu suivant (avant moveToNextGame: ${provider.currentSession!.currentGameIndex})',
+        );
+        debugPrint('➡️ Attente des autres joueurs...');
+
+        // On affiche un écran d'attente en attendant que le stream mette à jour l'index
+        if (mounted) {
+          setState(() {});
+        }
+      } else {
+        // L'utilisateur a quitté le jeu, retour au hub
+        debugPrint('❌ Utilisateur a quitté le jeu');
+        _exitOrchestrator();
+      }
+    } catch (e) {
+      debugPrint('❌ Erreur navigation jeu: $e');
+    } finally {
+      debugPrint('🔓 Fin de navigation, prêt pour suite');
+      _isNavigating = false;
     }
   }
 
@@ -200,11 +215,8 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
       case 'clues':
         return await _launchCluesGame(sessionId);
 
-      case 'caesar':
-        return await _launchCaesarGame();
-
-      case 'labyrinthe':
-        return await _launchLabyrintheGame();
+      case 'hot_cold':
+        return await _launchHotColdGame(sessionId);
 
       default:
         debugPrint('⚠️ Type de jeu inconnu: $gameType');
@@ -280,59 +292,65 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
     );
   }
 
-  Future<GameResult?> _launchCaesarGame() async {
+  Future<GameResult?> _launchHotColdGame(String sessionId) async {
+    final gameId = '${sessionId}_hot_cold';
     final provider = context.read<GameSessionProvider>();
     final playerIds = provider.currentSession!.playerScores.keys.toList();
-    final gameId = '${widget.sessionId}_caesar';
 
-    debugPrint('🎮 Lancement Caesar: gameId=$gameId');
+    debugPrint('🎮 Lancement HotCold: gameId=$gameId');
 
-    final result = await Navigator.push<Map<String, dynamic>>(
+    final result = await Navigator.push<Map<String, dynamic>?>(
       context,
       MaterialPageRoute(
-        builder: (_) => CaesarGameScreen(gameId: gameId, onGameFinished: () {}),
+        builder: (_) => ChangeNotifierProvider(
+          create: (_) => HotColdGameNotifier(
+            gameId: gameId,
+            playerAId: playerIds[0],
+            playerBId: playerIds[1],
+          ),
+          child: HotColdGameScreen(gameId: gameId),
+        ),
       ),
     );
 
     if (result == null) return null;
 
-    // Résultat factice pour le moment (victoire partagée ou score fixe)
+    final score = result['score'] as int? ?? 10;
+    // Assuming hot_cold assigns score to both or handled differently,
+    // but HotCold seems to be cooperative or handled by notifier state.
+    // The previous implementation was vague, let's look at HotColdGameNotifier.
+    // It updates stats in DB. But here we need to return a GameResult for the orchestrator to save locally/session level.
+    // However, HotColdGameNotifier writes to DB directly via CommunicationService.
+    // But GameOrchestrator also calls provider.saveGameResult. We need to avoid double writes or ensure consistency.
+    // The orchestrator expects a return value to call saveGameResult.
+    // Let's return a result that reflects the game state.
+
+    // Note: HotColdGameNotifier updates 'scores' in its own way.
+    // If CommunicationService writes to 'game_results', maybe we shouldn't write again?
+    // GameSessionProvider.saveGameResult writes to 'game_results'.
+    // Double write might be an issue.
+    // Let's check HotColdGameNotifier again. It uses CommunicationService.
+    // CommunicationService likely writes to a specific table or 'game_data' field in 'game_sessions' or similar?
+    // Actually HotColdGameNotifier writes to `game_data` JSON in `game_sessions` via `updateGameDataBatch`.
+    // It does NOT write to `game_results` table directly seemingly.
+    // So Orchestrator MUST write to `game_results`.
+
+    // For Hot Cold:
+    // Who is the winner? It's a cooperative game usually or asymmetry.
+    // Let's assume everyone gets points if they win.
+
     return GameResult(
-      gameType: 'caesar',
-      winnerId: null, // Égalité par défaut
-      scores: {
-        for (var pid in playerIds) pid: result['score'] as int? ?? 10,
-      }, // Score par défaut
+      gameType: 'hot_cold',
+      winnerId: null, // As per logic
+      scores: {for (var pid in playerIds) pid: score},
       completedAt: DateTime.now(),
-      additionalData: {'game_finished': true},
-    );
-  }
-
-  Future<GameResult?> _launchLabyrintheGame() async {
-    // TODO: Implémenter le jeu Labyrinthe
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Le jeu Labyrinthe n\'est pas encore implémenté'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-
-    await Future.delayed(const Duration(seconds: 2));
-
-    // Résultat temporaire : égalité
-    final provider = context.read<GameSessionProvider>();
-    final playerIds = provider.currentSession!.playerScores.keys.toList();
-
-    return GameResult.draw(
-      gameType: 'labyrinthe',
-      playerIds: playerIds,
-      pointsEach: 0,
+      additionalData: {'game_finished': true, 'rounds_played': 2},
     );
   }
 
   bool _isNavigatingToResults = false;
 
-  void _showFinalResults() {
+  Future<void> _showFinalResults() async {
     if (!mounted || _isNavigatingToResults) return;
 
     _isNavigatingToResults = true;

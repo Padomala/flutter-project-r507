@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:async'; // Added for StreamSubscription
 import 'dart:math';
 import '../../core/game_enums.dart';
 import '../../core/constants.dart';
@@ -19,6 +20,9 @@ class GuessingGameNotifier extends ChangeNotifier {
 
   /// Identifiant du joueur local (A ou B).
   late PlayerId _localPlayerId;
+
+  StreamSubscription<Map<String, dynamic>>? _gameSubscription;
+  bool _isDisposed = false;
 
   /// Indicateur de chargement.
   bool _isLoading = false;
@@ -45,6 +49,7 @@ class GuessingGameNotifier extends ChangeNotifier {
   /// Gérer l'affichage d'un indicateur de chargement.
   /// Met à jour [_isLoading] et prévient l'UI de se rafraîchir.
   void _setLoading(bool loading) {
+    if (_isDisposed) return;
     _isLoading = loading;
     notifyListeners();
   }
@@ -97,7 +102,7 @@ class GuessingGameNotifier extends ChangeNotifier {
   /// 2. S'abonne au flux de données pour mettre à jour [_state] en temps réel dès que Supabase change.
   void _initializeGame() async {
     final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) {
+    if (user == null || _isDisposed) {
       debugPrint('🛑 GuessingGame: Pas d\'utilisateur connecté');
       return;
     }
@@ -106,6 +111,7 @@ class GuessingGameNotifier extends ChangeNotifier {
     debugPrint('Args: playerA=$playerAId, playerB=$playerBId');
 
     var gameMetadata = await _commService.getGameMetadata();
+    if (_isDisposed) return;
 
     // Mode Orchestrateur Check
     if (playerAId != null && playerBId != null) {
@@ -129,13 +135,16 @@ class GuessingGameNotifier extends ChangeNotifier {
         if (_localPlayerId == PlayerId.playerA) {
           debugPrint('Creating game (Player A)...');
           await _createInitialGameData(round: 1, playerBId: playerBId);
+          if (_isDisposed) return;
           gameMetadata = await _commService.getGameMetadata();
+          if (_isDisposed) return;
         } else {
           debugPrint('Waiting for Player A to create game...');
           // Player B doit peut-être attendre que A crée ?
           // Normalement createGameData gère l'upsert s'il n'existe pas.
           // Mais ici on utilise createInitialGameData, faisons pareil.
           await _createInitialGameData(round: 1, playerBId: playerBId);
+          if (_isDisposed) return;
         }
       }
     }
@@ -144,6 +153,7 @@ class GuessingGameNotifier extends ChangeNotifier {
       // ... logic existante ...
       if (gameMetadata == null) {
         await _createInitialGameData(round: 1);
+        if (_isDisposed) return;
         _localPlayerId = PlayerId.playerA;
       } else {
         final playerA = gameMetadata['player_a_id'];
@@ -153,6 +163,7 @@ class GuessingGameNotifier extends ChangeNotifier {
         else if (user.id == playerB)
           _localPlayerId = PlayerId.playerB;
         else if (playerB == null && await _commService.joinGameAsPlayerB()) {
+          if (_isDisposed) return;
           _localPlayerId = PlayerId.playerB;
         } else {
           return;
@@ -162,6 +173,8 @@ class GuessingGameNotifier extends ChangeNotifier {
 
     // Chargement initial
     final initialGameData = await _commService.getGameData();
+    if (_isDisposed) return;
+
     if (initialGameData != null) {
       debugPrint('📥 Initial Data loaded: $initialGameData');
       final gameData = GuessingGameDataModel.fromJson(initialGameData);
@@ -181,8 +194,8 @@ class GuessingGameNotifier extends ChangeNotifier {
 
     // Écoute Live
     debugPrint('🎧 Subscribing to game stream...');
-    _commService.gameStream.listen((row) {
-      if (row.isEmpty) return;
+    _gameSubscription = _commService.gameStream.listen((row) {
+      if (row.isEmpty || _isDisposed) return;
       // debugPrint('⚡ Live Update: $row');
 
       final playerBIdRow = row['player_b_id'];
@@ -202,9 +215,16 @@ class GuessingGameNotifier extends ChangeNotifier {
     });
   }
 
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _gameSubscription?.cancel();
+    super.dispose();
+  }
+
   /// Compare le mot tapé avec la cible, définit si c'est correct, et met à jour Supabase.
   Future<void> submitGuess(String guess) async {
-    if (_isLoading || guess.trim().isEmpty) return;
+    if (_isLoading || guess.trim().isEmpty || _isDisposed) return;
     _setLoading(true);
 
     final target = _state.gameData.targetWord;

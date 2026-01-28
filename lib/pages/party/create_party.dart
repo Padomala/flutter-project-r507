@@ -15,27 +15,29 @@ class CreatePartyPage extends StatefulWidget {
 }
 
 class _CreatePartyPageState extends State<CreatePartyPage> {
-  int _nbGames = 5;
+  int _nbGames = 2;
 
   Future<void> _createParty() async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
-    
+
     // Feedback visuel immédiat
     scaffoldMessenger.showSnackBar(
-      SnackBar(content: Text("Création de la partie avec $_nbGames mini-jeux...")),
+      SnackBar(
+        content: Text("Création de la partie avec $_nbGames mini-jeux..."),
+      ),
     );
 
     try {
-      await context.read<RoomProvider>().createRoom(settings: {'nb_games': _nbGames});
-      
+      await context.read<RoomProvider>().createRoom(
+        settings: {'nb_games': _nbGames},
+      );
+
       if (!mounted) return;
-      
+
       // Navigation vers la RoomHub
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => const RoomHub(), 
-        ),
+        MaterialPageRoute(builder: (_) => const RoomHub()),
       );
     } catch (e) {
       if (!mounted) return;
@@ -52,7 +54,7 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
         children: [
           // Assure-toi que le chemin est correct et accessible
           const BackgroundPage(pathBackground: "assets/images/carrefour.png"),
-          
+
           // Back Button
           Positioned(
             top: 40,
@@ -88,7 +90,8 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
                               ),
                               child: Text(
                                 "Nombre de mini-jeux",
-                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                style: Theme.of(context).textTheme.bodyLarge
+                                    ?.copyWith(
                                       fontSize: 20,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.white,
@@ -96,13 +99,13 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
                               ),
                             ),
                           ),
-                          
+
                           const SizedBox(height: 16),
 
                           // ---- ATOM NUMBER PICKER ----
                           AtomNumberPicker(
                             min: 1,
-                            max: 20,
+                            max: 2,
                             initial: _nbGames,
                             width: 290,
                             onChanged: (value) {
@@ -118,7 +121,7 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
                           AtomButton(
                             label: "Créer la partie",
                             bgColor: const Color.fromARGB(255, 18, 184, 10),
-                            onPressed: _createParty, 
+                            onPressed: _createParty,
                           ),
                         ],
                       ),

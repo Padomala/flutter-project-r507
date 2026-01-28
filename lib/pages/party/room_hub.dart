@@ -48,7 +48,10 @@ class _RoomHubState extends State<RoomHub> {
 
       // 2. Créer la session de jeu
       final playerIds = roomProvider.participants.map((p) => p.id).toList();
-      final nbGames = roomProvider.currentRoom?.settings?['nb_games'] ?? 3;
+      // Force limit to 2 games max as per new requirement
+      final int rawNbGames =
+          roomProvider.currentRoom?.settings?['nb_games'] ?? 2;
+      final int nbGames = rawNbGames > 2 ? 2 : rawNbGames;
 
       final sessionId = await sessionProvider.createSession(
         roomId: roomProvider.currentRoom!.id,
@@ -78,10 +81,18 @@ class _RoomHubState extends State<RoomHub> {
     }
   }
 
+  late RoomProvider _roomProvider;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _roomProvider = context.read<RoomProvider>();
+  }
+
   void _leaveRoom() async {
     // If I am host, we might want to warn or delete room.
     // For now, standard leave.
-    await context.read<RoomProvider>().leaveRoom();
+    await _roomProvider.leaveRoom();
     if (!mounted) return;
     Navigator.pop(context);
   }
@@ -90,10 +101,9 @@ class _RoomHubState extends State<RoomHub> {
   void dispose() {
     // Ensure we leave the room when the page is disposed
     // This handles cases where the user exits via system back button, etc.
-    final roomProvider = context.read<RoomProvider>();
-    if (roomProvider.currentRoom != null) {
+    if (_roomProvider.currentRoom != null) {
       // Call leaveRoom without awaiting to avoid blocking dispose
-      roomProvider.leaveRoom().catchError((e) {
+      _roomProvider.leaveRoom().catchError((e) {
         debugPrint("Error leaving room on dispose: $e");
       });
     }
@@ -133,7 +143,7 @@ class _RoomHubState extends State<RoomHub> {
       if (!amIHost) {
         final bool hasHost = players.any((p) => p.isHost);
         // If no host is found, we must exit
-        if (!hasHost) {
+        if (!hasHost && room?.status != 'playing') {
           context.read<RoomProvider>().leaveLocalInfo();
           Navigator.popUntil(
             context,
