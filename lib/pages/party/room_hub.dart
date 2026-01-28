@@ -68,8 +68,9 @@ class _RoomHubState extends State<RoomHub> {
       );
 
       if (!mounted) return;
-      if (sessionId == null)
+      if (sessionId == null) {
         throw Exception('Impossible de créer la session de jeu');
+      }
 
       _navigateToGameOrchestrator(sessionId);
     } catch (e) {
@@ -81,8 +82,9 @@ class _RoomHubState extends State<RoomHub> {
     }
   }
 
+  // --- MÉTHODE DE NAVIGATION SÉCURISÉE ---
   void _navigateToGameOrchestrator(String sessionId) {
-    // On marque qu'on a navigué pour bloquer l'auto-join
+    // 1. On verrouille la navigation
     setState(() {
       _hasNavigatedToGame = true;
     });
@@ -93,17 +95,18 @@ class _RoomHubState extends State<RoomHub> {
         builder: (_) => GameOrchestratorScreen(sessionId: sessionId),
       ),
     ).then((_) {
-      // --- C'EST ICI QUE SE JOUE LA CORRECTION DE LA BOUCLE ---
+      // 2. Au retour, on vérifie si on doit déverrouiller
       if (mounted) {
         final sessionProvider = context.read<GameSessionProvider>();
-        // Si la session est terminée (on revient des résultats ou via pushReplacement),
-        // ON NE REMET PAS le flag à false. On laisse bloqué pour éviter que le RoomHub ne relance.
+
+        // ANTI-BOUCLE : Si la session est finie, on ne remet PAS le flag à false.
+        // Cela empêche le Hub de relancer le jeu immédiatement.
         if (sessionProvider.isCompleted) {
-          debugPrint("🛑 Retour au Hub après fin de partie. Auto-join bloqué.");
+          debugPrint("🛑 [RoomHub] Session terminée. Auto-join bloqué.");
           return;
         }
 
-        // Sinon (retour arrière normal en cours de jeu), on autorise à relancer
+        // Sinon (retour arrière manuel), on autorise à relancer
         setState(() {
           _hasNavigatedToGame = false;
         });
@@ -142,7 +145,6 @@ class _RoomHubState extends State<RoomHub> {
         return;
       }
 
-      // 1. Host left
       if (room == null) {
         final messenger = ScaffoldMessenger.of(context);
         Navigator.popUntil(
@@ -159,7 +161,6 @@ class _RoomHubState extends State<RoomHub> {
         return;
       }
 
-      // 2. Guest detects Host left
       if (!amIHost) {
         final bool hasHost = players.any((p) => p.isHost);
         if (!hasHost) {
@@ -189,7 +190,6 @@ class _RoomHubState extends State<RoomHub> {
         }
       }
 
-      // 3. Host detects Guest left
       if (players.length < _previousParticipantCount) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -202,16 +202,19 @@ class _RoomHubState extends State<RoomHub> {
     });
 
     // --- LOGIC: AUTO JOIN GAME ---
-    // Si la room est en jeu et qu'on n'a pas encore navigué
     if (room != null && room.status == 'playing' && !_hasNavigatedToGame) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
+        // Double check pour éviter la race condition
         if (!mounted || _hasNavigatedToGame) return;
 
-        // VERIFICATION DE SECURITE : Si on a déjà fini cette session localement, on n'y retourne pas
+        // VERIFICATION DE SECURITE SUPPLEMENTAIRE
         final sessionProvider = context.read<GameSessionProvider>();
-        if (sessionProvider.isCompleted) return;
+        if (sessionProvider.isCompleted) {
+          debugPrint("🛑 [RoomHub] Session déjà complétée, pas d'auto-join.");
+          return;
+        }
 
-        // On marque immédiatement pour éviter les doubles appels
+        // On marque immédiatement
         setState(() {
           _hasNavigatedToGame = true;
         });
@@ -221,7 +224,7 @@ class _RoomHubState extends State<RoomHub> {
         if (!mounted) return;
 
         if (sessionProvider.currentSession != null) {
-          // On appelle la méthode qui contient le .then() magique
+          // On utilise la méthode de navigation sécurisée
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -231,7 +234,7 @@ class _RoomHubState extends State<RoomHub> {
             ),
           ).then((_) {
             if (mounted) {
-              // Même logique de protection au retour
+              // Même check au retour
               if (context.read<GameSessionProvider>().isCompleted) return;
               setState(() {
                 _hasNavigatedToGame = false;
@@ -239,7 +242,6 @@ class _RoomHubState extends State<RoomHub> {
             }
           });
         } else {
-          // Erreur de chargement
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Erreur: Session de jeu non trouvée'),

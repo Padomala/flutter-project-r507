@@ -40,10 +40,6 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
       (n) => n.isLoading,
     );
 
-    if (state.isGameOver) {
-      return _buildGameOverPopup(context, notifier);
-    }
-
     return Scaffold(
       body: Stack(
         children: [
@@ -129,12 +125,15 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
     GuessingGameNotifier notifier,
     bool isLoading,
   ) {
+    // Si la partie est finie OU si on est sur l'écran de résultat d'une manche
+    if (state.isGameOver || state.currentState == GameStateEnum.results) {
+      return _buildResultsScreen(state, notifier, isLoading);
+    }
+
     if (state.currentState == GameStateEnum.waiting) {
       return _buildWaitingScreen('En attente du second joueur...');
     }
-    if (state.currentState == GameStateEnum.results) {
-      return _buildRoundResultsScreen(state, notifier, isLoading);
-    }
+
     if (state.amIDescriber) {
       return _buildDescriberView(state);
     } else {
@@ -264,13 +263,15 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
     );
   }
 
-  Widget _buildRoundResultsScreen(
+  /// Écran de résultat unifié (Fin de manche ou Fin de jeu)
+  Widget _buildResultsScreen(
     GuessingGameState state,
     GuessingGameNotifier notifier,
     bool isLoading,
   ) {
     final bool isCorrect = state.gameData.isCorrect == true;
-    final bool isLastRound = state.currentRound == 2;
+    // On considère que c'est la dernière manche si on est au round 2 ou si gameOver est true
+    final bool isLastRound = state.currentRound >= 2 || state.isGameOver;
     final String target = state.gameData.targetWord;
     final String guess = state.gameData.guess ?? "?";
 
@@ -297,10 +298,22 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
         ),
         const SizedBox(height: 30),
         _buildStyledButton(
-          isLastRound ? 'VOIR LE SCORE FINAL' : 'MANCHE SUIVANTE',
+          isLastRound ? 'JEU SUIVANT' : 'ECHANGER LES ROLES',
           isLoading,
           () {
-            notifier.proceedToNextStep();
+            if (isLastRound) {
+              // C'est la fin du jeu, on renvoie les résultats à l'orchestrateur
+              final int score = state.gameData.score;
+              final results = {
+                'finished': true,
+                'playerA_score': score,
+                'playerB_score': score, // Score coopératif ou symétrique ici
+              };
+              Navigator.pop(context, results);
+            } else {
+              // Sinon on passe à la manche suivante
+              notifier.proceedToNextStep();
+            }
           },
           color: isCorrect ? Colors.green : AppColors.blue,
         ),
@@ -403,60 +416,6 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
                   letterSpacing: 1,
                 ),
               ),
-      ),
-    );
-  }
-
-  Widget _buildGameOverPopup(
-    BuildContext context,
-    GuessingGameNotifier notifier,
-  ) {
-    // Calcul de résultats temporaire
-    final Map<String, dynamic> gameResults = {
-      'finished': true,
-      'playerA_score': 1,
-      'playerB_score': 1,
-      'note': 'Système de rounds à améliorer',
-    };
-
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Stack(
-        children: [
-          Container(color: Colors.black.withOpacity(0.8)),
-          Center(
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.85,
-              padding: const EdgeInsets.all(25),
-              decoration: BoxDecoration(
-                color: AppColors.yellow,
-                borderRadius: BorderRadius.circular(25),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.flag, size: 60, color: AppColors.textColor),
-                  const SizedBox(height: 15),
-                  const Text(
-                    "PARTIE TERMINÉE",
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
-                  ),
-                  const SizedBox(height: 30),
-                  _buildStyledButton("REJOUER", false, () {
-                    _guessController.clear();
-                    notifier.resetGameFull();
-                  }, color: AppColors.blue),
-                  _buildStyledButton("TERMINER", false, () {
-                    // SÉCURITÉ ICI : Vérifier mounted avant de pop
-                    if (context.mounted) {
-                      Navigator.pop(context, gameResults);
-                    }
-                  }, color: AppColors.gray),
-                ],
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

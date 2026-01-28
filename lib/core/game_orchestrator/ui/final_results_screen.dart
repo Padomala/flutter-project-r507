@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/game_result_model.dart';
 import '../providers/game_session_provider.dart';
 import '../../../store/provider/room_provider.dart';
+import '../../../app_colors.dart';
+import '../../../widget/atoms/atom_background_page.dart';
 
 class FinalResultsScreen extends StatefulWidget {
   final String sessionId;
@@ -19,6 +21,7 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
   late ConfettiController _confettiController;
   List<GameResult> _results = [];
   bool _isLoading = true;
+  bool _isReplaying = false;
 
   @override
   void initState() {
@@ -32,9 +35,10 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
   Future<void> _loadResults() async {
     if (!mounted) return;
     final provider = context.read<GameSessionProvider>();
+    // On charge les résultats une fois
     final results = await provider.getResults();
 
-    if (!mounted) return; // Protection
+    if (!mounted) return;
 
     setState(() {
       _results = results;
@@ -53,12 +57,62 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
     if (winnerId == null) return 'Égalité';
 
     final roomProvider = context.read<RoomProvider>();
+    if (roomProvider.participants.isEmpty) return 'Joueur';
+
     final participant = roomProvider.participants.firstWhere(
       (p) => p.id == winnerId,
       orElse: () => roomProvider.participants.first,
     );
 
     return participant.pseudo ?? 'Joueur';
+  }
+
+  Future<void> _handleReplay() async {
+    if (_isReplaying) return;
+    setState(() => _isReplaying = true);
+
+    final roomProvider = context.read<RoomProvider>();
+    final sessionProvider = context.read<GameSessionProvider>();
+    final amIHost = roomProvider.amIHost;
+    final currentRoom = roomProvider.currentRoom;
+
+    try {
+      if (amIHost && currentRoom != null) {
+        debugPrint('🔄 [HOST] Préparation de la revanche...');
+        await Supabase.instance.client
+            .from('rooms')
+            .update({'status': 'waiting'})
+            .eq('id', currentRoom.id);
+
+        final playerIds = roomProvider.participants.map((p) => p.id).toList();
+        final int rawNbGames = currentRoom.settings?['nb_games'] ?? 2;
+        final int nbGames = rawNbGames > 2 ? 2 : rawNbGames;
+
+        await sessionProvider.createSession(
+          roomId: currentRoom.id,
+          nbGames: nbGames,
+          playerIds: playerIds,
+        );
+
+        await Supabase.instance.client
+            .from('rooms')
+            .update({'status': 'playing'})
+            .eq('id', currentRoom.id);
+      }
+
+      sessionProvider.clearSession();
+
+      if (mounted) {
+        Navigator.popUntil(context, (route) => route.isFirst);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur lors du redémarrage: $e')),
+        );
+        setState(() => _isReplaying = false);
+      }
+    }
   }
 
   @override
@@ -70,16 +124,46 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
   @override
   Widget build(BuildContext context) {
     final sessionProvider = context.watch<GameSessionProvider>();
+    final roomProvider = context.watch<RoomProvider>();
     final session = sessionProvider.currentSession;
+    final amIHost = roomProvider.amIHost;
+    final screenSize = MediaQuery.of(context).size;
 
-    if (_isLoading || session == null) {
+    // --- CORRECTION DU BUG ICI ---
+    // Si on a fini de charger localement (_isLoading == false)
+    // MAIS que la session est null (l'hôte a quitté/supprimé la session),
+    // alors on doit sortir de l'écran.
+    if (!_isLoading && session == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          // On retourne à l'accueil
+          Navigator.popUntil(context, (route) => route.isFirst);
+        }
+      });
+      // On affiche un loader temporaire le temps de la redirection
       return const Scaffold(
-        backgroundColor: Color(0xFF1A1A1A),
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(child: CircularProgressIndicator(color: AppColors.red)),
       );
     }
 
-    final sortedEntries = session.playerScores.entries.toList()
+    // Affichage pendant le chargement initial des données
+    if (_isLoading) {
+      return const Scaffold(
+        body: Stack(
+          children: [
+            BackgroundPage(pathBackground: 'assets/images/voiture_rouge.png'),
+            Center(child: CircularProgressIndicator(color: Colors.white)),
+          ],
+        ),
+      );
+    }
+    // --- FIN DE LA CORRECTION ---
+
+    // Note: Si session est null ici, le bloc ci-dessus l'aura attrapé.
+    // On utilise une valeur par défaut vide pour éviter le crash si jamais ça passe.
+    final safePlayerScores = session?.playerScores ?? {};
+
+    final sortedEntries = safePlayerScores.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
     final winnerId = sortedEntries.isNotEmpty ? sortedEntries.first.key : null;
@@ -89,25 +173,14 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
         : 0;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A1A),
       body: Stack(
         children: [
-          // Background
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.purple.shade900.withOpacity(0.3),
-                  const Color(0xFF1A1A1A),
-                  Colors.blue.shade900.withOpacity(0.3),
-                ],
-              ),
-            ),
+          // 1. FOND (Style Login/Profile)
+          const BackgroundPage(
+            pathBackground: 'assets/images/voiture_rouge.png',
           ),
 
-          // Confettis
+          // 2. Confetti
           Align(
             alignment: Alignment.topCenter,
             child: ConfettiWidget(
@@ -119,181 +192,263 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
               gravity: 0.1,
               shouldLoop: false,
               colors: const [
-                Colors.green,
-                Colors.blue,
-                Colors.pink,
-                Colors.orange,
+                AppColors.green,
+                AppColors.blue,
+                AppColors.yellow,
+                AppColors.red,
               ],
             ),
           ),
 
-          // UI
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                children: [
-                  const SizedBox(height: 20),
-                  const Text(
-                    '🎉 Partie Terminée ! 🎉',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
+          // 3. CONTENU
+          Center(
+            child: SingleChildScrollView(
+              child: Container(
+                width: screenSize.width * 0.9,
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 40,
+                ),
+                padding: const EdgeInsets.all(25),
+                decoration: BoxDecoration(
+                  color: AppColors.yellow, // Style Profile/Login
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(50),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 40),
-
-                  // Winner Card
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.amber.shade700, Colors.amber.shade400],
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // --- TITRE ---
+                    const Text(
+                      'RÉSULTATS',
+                      style: TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textColor,
+                        letterSpacing: 1.5,
                       ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.amber.withOpacity(0.5),
-                          blurRadius: 20,
-                        ),
-                      ],
                     ),
-                    child: Column(
-                      children: [
-                        const Icon(
-                          Icons.emoji_events,
-                          size: 60,
-                          color: Colors.white,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          winnerName,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          '$winnerScore points',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                    const SizedBox(height: 20),
 
-                  const SizedBox(height: 40),
-
-                  // Scores List
-                  Expanded(
-                    child: Container(
+                    // --- CARTE GAGNANT ---
+                    Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
-                          width: 2,
-                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(20),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          const Icon(
+                            Icons.emoji_events,
+                            size: 60,
+                            color: Colors.amber,
+                          ),
+                          const SizedBox(height: 10),
                           const Text(
-                            'Scores Finaux',
+                            "VAINQUEUR",
                             style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
+                              color: Colors.grey,
                               fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              letterSpacing: 2,
                             ),
                           ),
-                          const SizedBox(height: 20),
-                          Expanded(
-                            child: ListView.builder(
-                              itemCount: sortedEntries.length,
-                              itemBuilder: (context, index) {
-                                final entry = sortedEntries[index];
-                                return Container(
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.05),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        '${index + 1}.',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Text(
-                                          _getWinnerName(entry.key),
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 18,
-                                          ),
-                                        ),
-                                      ),
-                                      Text(
-                                        '${entry.value} pts',
-                                        style: const TextStyle(
-                                          color: Colors.amber,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
+                          const SizedBox(height: 5),
+                          Text(
+                            winnerName.toUpperCase(),
+                            style: const TextStyle(
+                              color: AppColors.textColor,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w900,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          Text(
+                            '$winnerScore POINTS',
+                            style: const TextStyle(
+                              color: AppColors.blue,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 30),
+                    const SizedBox(height: 30),
 
-                  // Buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            final sessionProvider = context
-                                .read<GameSessionProvider>();
-                            sessionProvider.clearSession(); // Clean
-                            if (mounted)
-                              Navigator.popUntil(
-                                context,
-                                (route) => route.isFirst,
-                              );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey.shade800,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          child: const Text(
-                            'Quitter',
-                            style: TextStyle(fontSize: 18, color: Colors.white),
-                          ),
+                    // --- LISTE DES SCORES ---
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "CLASSEMENT",
+                        style: TextStyle(
+                          color: AppColors.textColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
                         ),
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: sortedEntries.length,
+                        separatorBuilder: (_, __) =>
+                            const Divider(height: 1, color: Colors.black12),
+                        itemBuilder: (context, index) {
+                          final entry = sortedEntries[index];
+                          final isWinner = index == 0;
+                          return ListTile(
+                            leading: Container(
+                              width: 30,
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: isWinner
+                                    ? Colors.amber
+                                    : Colors.grey.shade400,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '${index + 1}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            title: Text(
+                              _getWinnerName(entry.key),
+                              style: TextStyle(
+                                fontWeight: isWinner
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                color: AppColors.textColor,
+                              ),
+                            ),
+                            trailing: Text(
+                              '${entry.value} pts',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                color: AppColors.blue,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    // --- BOUTONS ---
+                    Row(
+                      children: [
+                        // BOUTON QUITTER
+                        Expanded(
+                          child: SizedBox(
+                            height: 60,
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                final roomProvider = context
+                                    .read<RoomProvider>();
+                                final sessionProvider = context
+                                    .read<GameSessionProvider>();
+
+                                // Host release room logic
+                                if (roomProvider.amIHost &&
+                                    roomProvider.currentRoom != null) {
+                                  try {
+                                    await Supabase.instance.client
+                                        .from('rooms')
+                                        .update({'status': 'waiting'})
+                                        .eq('id', roomProvider.currentRoom!.id);
+                                  } catch (_) {}
+                                }
+
+                                sessionProvider.clearSession();
+                                if (mounted) {
+                                  Navigator.popUntil(
+                                    context,
+                                    (route) => route.isFirst,
+                                  );
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.red,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: const Text(
+                                'QUITTER',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 15),
+                        // BOUTON REJOUER
+                        Expanded(
+                          child: SizedBox(
+                            height: 60,
+                            child: ElevatedButton(
+                              onPressed: _isReplaying ? null : _handleReplay,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: amIHost
+                                    ? AppColors.green
+                                    : AppColors.blue,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: _isReplaying
+                                  ? const CircularProgressIndicator(
+                                      color: Colors.white,
+                                    )
+                                  : Text(
+                                      amIHost ? 'REJOUER' : 'REJOINDRE',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
