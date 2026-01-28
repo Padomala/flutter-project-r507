@@ -14,36 +14,23 @@ import '../../data/models/game_data_model.dart';
 class GuessingGameNotifier extends ChangeNotifier {
   /// Identifiant unique de la partie.
   final String gameId;
-<<<<<<< HEAD
-
-  /// Service de communication avec Supabase.
-=======
   final String? playerAId; // Optionnel: UUID du joueur A (pour orchestrateur)
   final String? playerBId; // Optionnel: UUID du joueur B (pour orchestrateur)
->>>>>>> advancedRoomTest
   final CommunicationService _commService;
 
   /// Identifiant du joueur local (A ou B).
   late PlayerId _localPlayerId;
 
-<<<<<<< HEAD
-=======
   StreamSubscription<Map<String, dynamic>>? _gameSubscription;
   bool _isDisposed = false;
 
->>>>>>> advancedRoomTest
   /// Indicateur de chargement.
   bool _isLoading = false;
 
   /// Expose l'état actuel aux widgets.
   bool get isLoading => _isLoading;
 
-<<<<<<< HEAD
-  /// Initialise le service et lance la configuration de la partie.
-  GuessingGameNotifier({required this.gameId})
-=======
   GuessingGameNotifier({required this.gameId, this.playerAId, this.playerBId})
->>>>>>> advancedRoomTest
     : _commService = CommunicationService(gameId: gameId) {
     _initializeGame();
   }
@@ -77,20 +64,11 @@ class GuessingGameNotifier extends ChangeNotifier {
     if (isGameOver) return GameStateEnum.results;
     if (playerBId == null) return GameStateEnum.waiting;
 
-    // Si isCorrect n'est plus null, c'est que le résultat de la manche est connu
+    // Si le mot a été trouvé (ou perdu), on affiche le résultat de la manche
     if (gameData.isCorrect != null) {
       return GameStateEnum.results;
     }
 
-<<<<<<< HEAD
-    // État par défaut : la partie est en cours
-    return GameStateEnum.playerATurn;
-  }
-
-  /// Prépare les données d'une nouvelle manche.
-  /// Pioche un mot au hasard, récupère ses mots interdits et crée l'objet JSON initial en base de données via le service.
-  Future<void> _createInitialGameData({int round = 1}) async {
-=======
     // Sinon, on est en plein jeu (Descripteur parle, Devineur tape)
     return GameStateEnum
         .playerATurn; // On utilise cet enum comme "En cours de jeu"
@@ -101,7 +79,6 @@ class GuessingGameNotifier extends ChangeNotifier {
     int round = 1,
     String? playerBId,
   }) async {
->>>>>>> advancedRoomTest
     final random = Random();
     final List<String> availableWords = kTabooWords.keys.toList();
     final targetWord = availableWords[random.nextInt(availableWords.length)];
@@ -136,45 +113,13 @@ class GuessingGameNotifier extends ChangeNotifier {
     var gameMetadata = await _commService.getGameMetadata();
     if (_isDisposed) return;
 
-<<<<<<< HEAD
-    if (gameMetadata == null) {
-      // Cas où la ligne n'existe pas encore : l'utilisateur actuel est le créateur (A)
-      await _createInitialGameData(round: 1);
-      _localPlayerId = PlayerId.playerA;
-    } else {
-      final playerA = gameMetadata['player_a_id'];
-      final playerB = gameMetadata['player_b_id'];
-
-      if (user.id == playerA) {
-=======
     // Mode Orchestrateur Check
     if (playerAId != null && playerBId != null) {
       if (user.id == playerAId) {
->>>>>>> advancedRoomTest
         _localPlayerId = PlayerId.playerA;
         debugPrint('✅ Role: Player A');
       } else if (user.id == playerBId) {
         _localPlayerId = PlayerId.playerB;
-<<<<<<< HEAD
-      } else if (playerB == null) {
-        // La place B est vide : on tente de la prendre
-        final success = await _commService.joinGameAsPlayerB();
-        if (success) {
-          _localPlayerId = PlayerId.playerB;
-        } else {
-          return;
-        }
-      } else {
-        return; // Partie déjà complète
-      }
-    }
-
-    // Écoute en continu les modifications de Supabase
-    _commService.gameStream.listen((row) {
-      if (row.isEmpty) return;
-
-      final playerBId = row['player_b_id'];
-=======
         debugPrint('✅ Role: Player B');
       } else {
         debugPrint(
@@ -254,13 +199,11 @@ class GuessingGameNotifier extends ChangeNotifier {
       // debugPrint('⚡ Live Update: $row');
 
       final playerBIdRow = row['player_b_id'];
->>>>>>> advancedRoomTest
       final jsonData = row['data'] as Map<String, dynamic>? ?? {};
       final int round = jsonData['round'] ?? 1;
       final bool gameOver = jsonData['game_over'] ?? false;
       final gameData = GuessingGameDataModel.fromJson(jsonData);
 
-      // Mise à jour de l'état local et notification des widgets
       _state = _state.copyWith(
         localPlayerId: _localPlayerId,
         currentState: _determineState(gameData, playerBIdRow, gameOver),
@@ -272,8 +215,6 @@ class GuessingGameNotifier extends ChangeNotifier {
     });
   }
 
-<<<<<<< HEAD
-=======
   @override
   void dispose() {
     _isDisposed = true;
@@ -281,13 +222,13 @@ class GuessingGameNotifier extends ChangeNotifier {
     super.dispose();
   }
 
->>>>>>> advancedRoomTest
   /// Compare le mot tapé avec la cible, définit si c'est correct, et met à jour Supabase.
   Future<void> submitGuess(String guess) async {
     if (_isLoading || guess.trim().isEmpty || _isDisposed) return;
     _setLoading(true);
 
     final target = _state.gameData.targetWord;
+    // Vérification automatique insensible à la casse
     final isMatch = guess.trim().toLowerCase() == target.trim().toLowerCase();
 
     int currentScore = _state.gameData.score;
@@ -318,6 +259,7 @@ class GuessingGameNotifier extends ChangeNotifier {
     _setLoading(true);
 
     if (_state.currentRound == 1) {
+      // Setup Round 2 : Nouveau mot
       final random = Random();
       //liste des mots disponibles
       final List<String> availableWords = kTabooWords.keys.toList();
@@ -336,6 +278,7 @@ class GuessingGameNotifier extends ChangeNotifier {
         'targetWord': newWord,
         'forbiddenWords': newForbidden,
         'guess': null,
+        'isCorrect': null,
       };
 
       await _commService.updateGameDataBatch(updateData);
