@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 
 /// Représente les données d'une manche de jeu de devinettes.
 ///
-/// Ce modèle est immuable ([@immutable]), ce qui garantit que les données
+/// Ce modèle est immuable ([immutable]), ce qui garantit que les données
 /// ne changent pas après la création de l'instance.
 @immutable
 class GuessingGameDataModel {

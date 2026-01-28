@@ -82,9 +82,7 @@ class _RoomHubState extends State<RoomHub> {
     }
   }
 
-  // --- MÉTHODE DE NAVIGATION SÉCURISÉE ---
   void _navigateToGameOrchestrator(String sessionId) {
-    // 1. On verrouille la navigation
     setState(() {
       _hasNavigatedToGame = true;
     });
@@ -95,18 +93,14 @@ class _RoomHubState extends State<RoomHub> {
         builder: (_) => GameOrchestratorScreen(sessionId: sessionId),
       ),
     ).then((_) {
-      // 2. Au retour, on vérifie si on doit déverrouiller
       if (mounted) {
         final sessionProvider = context.read<GameSessionProvider>();
 
-        // ANTI-BOUCLE : Si la session est finie, on ne remet PAS le flag à false.
-        // Cela empêche le Hub de relancer le jeu immédiatement.
         if (sessionProvider.isCompleted) {
-          debugPrint("🛑 [RoomHub] Session terminée. Auto-join bloqué.");
+          debugPrint("[RoomHub] Session terminée. Auto-join bloqué.");
           return;
         }
 
-        // Sinon (retour arrière manuel), on autorise à relancer
         setState(() {
           _hasNavigatedToGame = false;
         });
@@ -137,7 +131,6 @@ class _RoomHubState extends State<RoomHub> {
     final players = roomProvider.participants;
     final amIHost = roomProvider.amIHost;
 
-    // --- LOGIC: HANDLE DEPARTURES ---
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
@@ -210,7 +203,7 @@ class _RoomHubState extends State<RoomHub> {
         // VERIFICATION DE SECURITE SUPPLEMENTAIRE
         final sessionProvider = context.read<GameSessionProvider>();
         if (sessionProvider.isCompleted) {
-          debugPrint("🛑 [RoomHub] Session déjà complétée, pas d'auto-join.");
+          debugPrint("[RoomHub] Session déjà complétée, pas d'auto-join.");
           return;
         }
 

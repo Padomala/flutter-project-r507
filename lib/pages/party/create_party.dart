@@ -20,7 +20,6 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
   Future<void> _createParty() async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
-    // Feedback visuel immédiat
     scaffoldMessenger.showSnackBar(
       SnackBar(
         content: Text("Création de la partie avec $_nbGames mini-jeux..."),
@@ -34,7 +33,7 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
 
       if (!mounted) return;
 
-      // Navigation vers la RoomHub
+      // navigation vers la RoomHub
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const RoomHub()),
@@ -52,7 +51,6 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
     return Scaffold(
       body: Stack(
         children: [
-          // Assure-toi que le chemin est correct et accessible
           const BackgroundPage(pathBackground: "assets/images/carrefour.png"),
 
           // Back Button
@@ -79,7 +77,6 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // ---- LABEL ----
                           Align(
                             alignment: Alignment.centerLeft,
                             child: Container(
@@ -102,7 +99,6 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
 
                           const SizedBox(height: 16),
 
-                          // ---- ATOM NUMBER PICKER ----
                           AtomNumberPicker(
                             min: 1,
                             max: 2,
@@ -117,7 +113,6 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
 
                           const SizedBox(height: 32),
 
-                          // ---- BUTTON ----
                           AtomButton(
                             label: "Créer la partie",
                             bgColor: const Color.fromARGB(255, 18, 184, 10),

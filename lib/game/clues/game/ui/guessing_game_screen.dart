@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import '../../core/constants.dart';
 import '../../core/game_enums.dart';
 import '../state/guessing_game_notifier.dart';
 import '../models/guessing_state_model.dart';
@@ -21,12 +19,10 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
   @override
   void initState() {
     super.initState();
-    debugPrint('🎬 GuessingGameScreen: INIT');
   }
 
   @override
   void dispose() {
-    debugPrint('🎬 GuessingGameScreen: DISPOSE');
     _guessController.dispose();
     super.dispose();
   }
@@ -307,7 +303,7 @@ class _GuessingGameScreenState extends State<GuessingGameScreen> {
               final results = {
                 'finished': true,
                 'playerA_score': score,
-                'playerB_score': score, // Score coopératif ou symétrique ici
+                'playerB_score': score,
               };
               Navigator.pop(context, results);
             } else {

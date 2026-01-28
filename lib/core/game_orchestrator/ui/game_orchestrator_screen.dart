@@ -97,7 +97,7 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
     final serverIndex = session.currentGameIndex;
 
     if (serverIndex > _lastLaunchedIndex && !_isGameRunning) {
-      debugPrint('🚀 DÉTECTION NOUVEAU JEU: Index $serverIndex');
+      debugPrint('DÉTECTION NOUVEAU JEU: Index $serverIndex');
 
       _lastLaunchedIndex = serverIndex;
       _isGameRunning = true;
@@ -130,13 +130,13 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
     // car elle a pu être supprimée pendant l'animation de transition.
     final sessionAfterTransition = provider.currentSession;
     if (sessionAfterTransition == null) {
-      debugPrint('⚠️ Session perdue pendant la transition, arrêt séquence.');
+      debugPrint('Session perdue pendant la transition, arrêt séquence.');
       return;
     }
 
     // 2. Lancement du jeu (On utilise la variable locale sécurisée)
     final currentGame = sessionAfterTransition.currentGame;
-    debugPrint('🎮 Lancement UI Jeu: ${currentGame.gameType}');
+    debugPrint('Lancement UI Jeu: ${currentGame.gameType}');
 
     try {
       final result = await _navigateToGame(currentGame.gameType);
@@ -144,15 +144,15 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
       if (!mounted || _isExiting) return;
 
       if (result != null) {
-        debugPrint('💾 Sauvegarde résultat local...');
+        debugPrint('Sauvegarde résultat local...');
         await provider.saveGameResult(result);
-        debugPrint('⏳ Résultat sauvegardé. Attente synchro...');
+        debugPrint('Résultat sauvegardé. Attente synchro...');
       } else {
-        debugPrint('❌ Jeu annulé par utilisateur');
+        debugPrint('Jeu annulé par utilisateur');
         _exitOrchestrator();
       }
     } catch (e) {
-      debugPrint('❌ Erreur séquence jeu: $e');
+      debugPrint('Erreur séquence jeu: $e');
     }
   }
 
@@ -272,7 +272,7 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
 
     // 2. On active le Kill Switch
     _isExiting = true;
-    debugPrint('🏁 Navigation vers Résultats Finaux (One Shot)');
+    debugPrint('Navigation vers résultats finaux)');
 
     // 3. On se désabonne IMMÉDIATEMENT
     _removeListener();

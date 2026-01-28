@@ -37,10 +37,8 @@ class GameSessionService {
           .select()
           .single();
 
-      debugPrint('✅ Session créée: ${response['id']}');
       return GameSession.fromJson(response);
     } catch (e) {
-      debugPrint('❌ Erreur création session: $e');
       rethrow;
     }
   }
@@ -72,7 +70,7 @@ class GameSessionService {
 
       return GameSession.fromJson(response);
     } catch (e) {
-      debugPrint('❌ Erreur récupération session: $e');
+      debugPrint('Erreur récupération session: $e');
       rethrow;
     }
   }
@@ -91,7 +89,7 @@ class GameSessionService {
       if (response == null) return null;
       return GameSession.fromJson(response);
     } catch (e) {
-      debugPrint('❌ Erreur récupération session par room: $e');
+      debugPrint('Erreur récupération session par room: $e');
       return null;
     }
   }
@@ -107,9 +105,9 @@ class GameSessionService {
           })
           .eq('id', sessionId);
 
-      debugPrint('✅ Statut mis à jour: $status');
+      debugPrint('Statut mis à jour: $status');
     } catch (e) {
-      debugPrint('❌ Erreur mise à jour statut: $e');
+      debugPrint('Erreur mise à jour statut: $e');
       rethrow;
     }
   }
@@ -134,9 +132,9 @@ class GameSessionService {
           })
           .eq('id', sessionId);
 
-      debugPrint('✅ Passage au jeu ${newIndex + 1}/${current.totalGames}');
+      debugPrint('Passage au jeu ${newIndex + 1}/${current.totalGames}');
     } catch (e) {
-      debugPrint('❌ Erreur passage jeu suivant: $e');
+      debugPrint('Erreur passage jeu suivant: $e');
       rethrow;
     }
   }
@@ -195,17 +193,16 @@ class GameSessionService {
       }).toList();
 
       debugPrint(
-        '📊 Résultats reçus pour jeu $gameIndex: ${currentLevelResults.length}/${session.playerScores.length}',
+        'Résultats reçus pour jeu $gameIndex: ${currentLevelResults.length}/${session.playerScores.length}',
       );
 
       if (currentLevelResults.length >= session.playerScores.length) {
-        debugPrint('🚀 Tous les joueurs ont fini ! Passage au jeu suivant...');
         await moveToNextGame(sessionId);
       } else {
-        debugPrint('⏳ Attente des autres joueurs...');
+        debugPrint('Attente des autres joueurs...');
       }
     } catch (e) {
-      debugPrint('❌ Erreur enregistrement résultat: $e');
+      debugPrint('Erreur enregistrement résultat: $e');
       rethrow;
     }
   }
@@ -223,7 +220,7 @@ class GameSessionService {
           .map<GameResult>((json) => GameResult.fromJson(json))
           .toList();
     } catch (e) {
-      debugPrint('❌ Erreur récupération résultats: $e');
+      debugPrint('Erreur récupération résultats: $e');
       return [];
     }
   }
@@ -247,9 +244,9 @@ class GameSessionService {
   Future<void> deleteSession(String sessionId) async {
     try {
       await _client.from('game_sessions').delete().eq('id', sessionId);
-      debugPrint('✅ Session supprimée: $sessionId');
+      debugPrint('Session supprimée: $sessionId');
     } catch (e) {
-      debugPrint('❌ Erreur suppression session: $e');
+      debugPrint('Erreur suppression session: $e');
     }
   }
 }

@@ -150,7 +150,7 @@ class GameSessionProvider extends ChangeNotifier {
             }
           },
           onError: (error) {
-            debugPrint('❌ Erreur stream session: $error');
+            debugPrint('Erreur stream session: $error');
             if (error.toString().contains('Session not found')) {
               _currentSession = null;
               notifyListeners();
@@ -180,7 +180,6 @@ class GameSessionProvider extends ChangeNotifier {
 
   void _setError(String message) {
     _error = message;
-    debugPrint('⚠️ GameSessionProvider: $message');
     notifyListeners();
   }
 

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../widget/atoms/atom_text_field.dart';
 import 'package:game_v1/core/services/supabase_service.dart';
-import 'package:game_v1/pages/auth/register.dart';
 import 'package:game_v1/store/provider/user_provider.dart';
 import 'package:provider/provider.dart';
 import '../../app_colors.dart';
@@ -20,7 +19,6 @@ class _LoginPageState extends State<Login> {
   // get auth service
   final supabaseService = SupabaseService();
 
-  // text controller
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -53,13 +51,11 @@ class _LoginPageState extends State<Login> {
 
   @override
   Widget build(BuildContext context) {
-    //responsive
     final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
       body: Stack(
         children: [
-          // Image de fond
           BackgroundPage(pathBackground: 'assets/images/voiture_rouge.png'),
 
           // Back Button
@@ -72,7 +68,6 @@ class _LoginPageState extends State<Login> {
             ),
           ),
 
-          // Contenu principal
           Center(
             child: SingleChildScrollView(
               child: Container(
@@ -94,7 +89,6 @@ class _LoginPageState extends State<Login> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Logo ou titre
                     const Text(
                       'CONNEXION',
                       style: TextStyle(
@@ -105,7 +99,7 @@ class _LoginPageState extends State<Login> {
                     ),
 
                     const SizedBox(height: 20),
-                    // Champ Email
+                    //email
                     CustomTextField(
                       controller: _emailController,
                       label: "EMAIL",
@@ -114,7 +108,7 @@ class _LoginPageState extends State<Login> {
                       fieldType: EnumFieldType.email,
                     ),
                     const SizedBox(height: 15),
-                    // Champ mot de passe
+                    //mot de passe
                     CustomTextField(
                       controller: _passwordController,
                       label: "PASSWORD",
@@ -123,7 +117,6 @@ class _LoginPageState extends State<Login> {
                       fieldType: EnumFieldType.password,
                     ),
                     const SizedBox(height: 20),
-                    // Bouton de connexion
                     SizedBox(
                       child: AtomButton(
                         label: 'SE CONNECTER',
@@ -135,12 +128,10 @@ class _LoginPageState extends State<Login> {
                     ),
                     const SizedBox(height: 15),
                     TextButton(
-                      onPressed: () => Navigator.pushNamed(
-                        context,
-                        '/register',
-                      ), // Retourne à Login
+                      onPressed: () =>
+                          Navigator.pushNamed(context, '/register'),
                       child: const Text(
-                        'Vous n\'avez pas de compte ? Inscrivez-vous',
+                        'Vous n\'avez pas de compte ? Inscrivez-vous',
                         style: TextStyle(
                           color: AppColors.blue,
                           fontWeight: FontWeight.bold,

@@ -5,7 +5,7 @@ import '../model/room_model.dart';
 
 class RoomProvider with ChangeNotifier {
   final SupabaseService _service = SupabaseService();
-  
+
   Room? _currentRoom;
   List<RoomParticipant> _participants = [];
   bool _isLoading = false;
@@ -14,14 +14,14 @@ class RoomProvider with ChangeNotifier {
   Room? get currentRoom => _currentRoom;
   List<RoomParticipant> get participants => _participants;
   bool get isLoading => _isLoading;
-  
+
   // Helper to know if I am host
   bool get amIHost {
     final myId = _service.getCurrentUserId();
     if (myId == null || _currentRoom == null) return false;
     return _currentRoom!.hostId == myId;
   }
-  
+
   // Helper to check if room is full (assuming 2 players max for now based on UI)
   bool get isRoomFull => _participants.length >= 2;
 
@@ -34,7 +34,7 @@ class RoomProvider with ChangeNotifier {
 
       final roomData = await _service.createRoom(userId, settings: settings);
       _currentRoom = Room.fromJson(roomData);
-      
+
       await _refreshParticipants();
       _subscribeToRoom();
     } catch (e) {
@@ -54,7 +54,7 @@ class RoomProvider with ChangeNotifier {
 
       final roomData = await _service.joinRoom(code, userId);
       _currentRoom = Room.fromJson(roomData);
-      
+
       await _refreshParticipants();
       _subscribeToRoom();
     } catch (e) {
@@ -110,7 +110,9 @@ class RoomProvider with ChangeNotifier {
       final data = await _service.getRoomParticipants(_currentRoom!.id);
       print("Raw participants data: $data"); // DEBUG LOG
       _participants = data.map((e) => RoomParticipant.fromJson(e)).toList();
-      print("Participants refreshed: ${_participants.length} (Host found: ${_participants.any((p) => p.isHost)})"); // DEBUG
+      print(
+        "Participants refreshed: ${_participants.length} (Host found: ${_participants.any((p) => p.isHost)})",
+      ); // DEBUG
       notifyListeners();
     } catch (e, stack) {
       print("Error refreshing participants: $e");
@@ -129,13 +131,13 @@ class RoomProvider with ChangeNotifier {
         _refreshParticipants();
       } else if (payload.table == 'rooms') {
         // Room status changed or Room Deleted
-       if (payload.eventType == PostgresChangeEvent.update) {
-         _refreshRoom();
-       } else if (payload.eventType == PostgresChangeEvent.delete) {
-         // Room was deleted (Host left)
-         print("Room deleted event received. Clearing local info.");
-         leaveLocalInfo();
-       }
+        if (payload.eventType == PostgresChangeEvent.update) {
+          _refreshRoom();
+        } else if (payload.eventType == PostgresChangeEvent.delete) {
+          // Room was deleted (Host left)
+          print("Room deleted event received. Clearing local info.");
+          leaveLocalInfo();
+        }
       }
     });
   }

@@ -489,7 +489,7 @@ class _HotColdGameScreenState extends State<HotColdGameScreen> {
         ),
         const SizedBox(height: 40),
         _buildStyledButton(
-          isLastRound ? 'JEU SUIVANT' : 'ECHANGER LES ROLES',
+          isLastRound ? 'JEU SUIVANT' : 'ÉCHANGER LES ROLES',
           isLoading,
           () {
             if (isLastRound) {

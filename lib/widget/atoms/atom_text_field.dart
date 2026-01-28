@@ -27,7 +27,7 @@ class CustomTextField extends StatefulWidget {
 }
 
 class _CustomTextFieldState extends State<CustomTextField> {
-  bool _obscurePassword = true; // État interne pour afficher/masquer
+  bool _obscurePassword = true; // état interne pour afficher/masquer
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +51,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
             ),
           ),
 
-          // Champ de texte
+          // champ de texte
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
@@ -106,7 +106,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
     );
   }
 
-  // Détermine le type de clavier
+  // détermine le type de clavier
   TextInputType _getKeyboardType(EnumFieldType type) {
     switch (type) {
       case EnumFieldType.email:

@@ -14,11 +14,11 @@ class UserModel {
   });
 
   const UserModel.guest()
-      : id = 'guest',
-        name = 'Guest',
-        email = 'not connected',
-        avatarUrl = null,
-        isConnected = false;
+    : id = 'guest',
+      name = 'Guest',
+      email = 'not connected',
+      avatarUrl = null,
+      isConnected = false;
 
   UserModel copyWith({
     String? id,
@@ -36,11 +36,3 @@ class UserModel {
     );
   }
 }
-
-
-
-
-
-
-
-

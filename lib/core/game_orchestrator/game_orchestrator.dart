@@ -1,6 +1,3 @@
-// Export file for game orchestrator
-// Use: import 'package:game_v1/core/game_orchestrator/game_orchestrator.dart';
-
 // Models
 export 'models/game_session_model.dart';
 export 'models/game_result_model.dart';

@@ -36,7 +36,7 @@ class SettingsPopup extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Toggle vibration
+                        // vibration
                         Consumer<VibrationProvider>(
                           builder: (context, vibration, child) {
                             return ToggleButton(
@@ -55,7 +55,7 @@ class SettingsPopup extends StatelessWidget {
                         ),
                         const SizedBox(height: 12),
 
-                        // Toggle music
+                        // music
                         Consumer<AudioProvider>(
                           builder: (context, audio, child) {
                             return ToggleButton(

@@ -44,42 +44,36 @@ class HotColdGameNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  // --- LOGIQUE D'INITIALISATION ET ÉCOUTE ---
-
   void _initializeGame() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
-      debugPrint('🛑 HotCold: Pas d\'utilisateur connecté');
+      debugPrint('HotCold: Pas d\'utilisateur connecté');
       return;
     }
 
-    debugPrint('🏁 Init HotCold. User: ${user.id}. GameId: $gameId');
+    debugPrint('Init HotCold. User: ${user.id}. GameId: $gameId');
     if (_isDisposed) return;
 
     var gameMetadata = await _commService.getGameMetadata();
     debugPrint(
-      '🔍 GameMetadata received: $gameMetadata (isDisposed: $_isDisposed)',
+      'GameMetadata received: $gameMetadata (isDisposed: $_isDisposed)',
     );
     if (_isDisposed) return;
 
-    // 1. DÉTERMINATION DU RÔLE (ROBUSTE)
-    // Si l'orchestrateur nous a donné les IDs, on les utilise en priorité
     if (playerAId != null && playerBId != null) {
       if (user.id == playerAId) {
         _localPlayerId = PlayerId.playerA;
-        debugPrint('✅ Role: Player A (Describer)');
+        debugPrint('Role: Player A (Describer)');
       } else if (user.id == playerBId) {
         _localPlayerId = PlayerId.playerB;
-        debugPrint('✅ Role: Player B (Guesser)');
+        debugPrint('Role: Player B (Guesser)');
       } else {
         debugPrint(
-          '⛔ ERROR: User ID ${user.id} introuvable dans [$playerAId, $playerBId]. Force assign Player B to avoid crash.',
+          'ERROR: User ID ${user.id} introuvable dans [$playerAId, $playerBId]. Force assign Player B to avoid crash.',
         );
-        // Fallback sécurisé : définir une valeur par défaut pour éviter le crash "LateInitializationError"
         _localPlayerId = PlayerId.playerB;
       }
 
-      // Initialisation des données si nécessaire (Lazy creation par A)
       if (gameMetadata == null) {
         if (_localPlayerId == PlayerId.playerA) {
           debugPrint('Creating game (Player A)...');
@@ -87,14 +81,11 @@ class HotColdGameNotifier extends ChangeNotifier {
           if (_isDisposed) return;
         } else {
           debugPrint('Waiting for Player A to create game...');
-          // On s'assure que la donnée existe, sinon on la crée aussi pour éviter le blocage
           await _createInitialGameData(round: 1, playerBId: playerBId);
           if (_isDisposed) return;
         }
       }
-    }
-    // Mode Fallback (Jeu autonome sans orchestrateur)
-    else {
+    } else {
       if (gameMetadata == null) {
         await _createInitialGameData(round: 1);
         _localPlayerId = PlayerId.playerA;
@@ -118,7 +109,6 @@ class HotColdGameNotifier extends ChangeNotifier {
       }
     }
 
-    // 2. ÉCOUTE DE LA PARTIE
     _gameSubscription = _commService.gameStream.listen((row) {
       if (row.isEmpty || _isDisposed) return;
 
@@ -127,7 +117,6 @@ class HotColdGameNotifier extends ChangeNotifier {
       final int round = jsonData['round'] ?? 1;
       final bool gameOver = jsonData['game_over'] ?? false;
 
-      // Conversion sécurisée du JSON en Modèle
       final gameData = HotColdGameDataModel.fromJson(jsonData);
 
       _state = _state.copyWith(
@@ -153,7 +142,6 @@ class HotColdGameNotifier extends ChangeNotifier {
     String? playerBId,
     bool isGameOver,
   ) {
-    // ... logic unchanged ...
     if (isGameOver) return GameStateEnum.results;
     if (playerBId == null) return GameStateEnum.waiting;
 
@@ -169,7 +157,6 @@ class HotColdGameNotifier extends ChangeNotifier {
     String? playerBId,
   }) async {
     final random = Random();
-    // On suppose que hotColdWords est une Map<String, List<String>> dans constants.dart
     final List<String> themes = hotColdWords.keys.toList();
     final String selectedTheme = themes[random.nextInt(themes.length)];
     final List<String> wordsInTheme = hotColdWords[selectedTheme]!;
@@ -180,7 +167,7 @@ class HotColdGameNotifier extends ChangeNotifier {
       'theme': selectedTheme,
       'targetWord': selectedWord,
       'round': round,
-      'history': [], // Liste vide au départ
+      'history': [],
       'game_over': false,
       'isCorrect': false,
       'score': 0,
@@ -189,7 +176,6 @@ class HotColdGameNotifier extends ChangeNotifier {
     await _commService.createGameData(initialData, playerBId: playerBId);
   }
 
-  /// 1. LE CHERCHEUR PROPOSE UN MOT
   /// Ajoute le mot à l'historique avec le statut 'waiting'
   Future<void> submitAttempt(String word) async {
     if (_isLoading || word.trim().isEmpty) return;
@@ -204,7 +190,7 @@ class HotColdGameNotifier extends ChangeNotifier {
       'temperature': 'waiting', // En attente du verdict du maître
     });
 
-    // Mise à jour partielle (Batch update)
+    // Mise à jour partielle
     await _commService.updateGameDataField(
       key: 'history',
       value: currentHistory,
@@ -213,7 +199,6 @@ class HotColdGameNotifier extends ChangeNotifier {
     _setLoading(false);
   }
 
-  /// 2. LE MAÎTRE JUGE LA PROPOSITION (Chaud/Froid/Trouvé)
   /// Met à jour la dernière entrée de l'historique
   Future<void> rateLastAttempt(String rating) async {
     if (_isLoading || _state.gameData.history.isEmpty) return;
@@ -243,7 +228,7 @@ class HotColdGameNotifier extends ChangeNotifier {
     _setLoading(false);
   }
 
-  /// 3. PASSER À LA SUITE (Manche suivante ou Fin de partie)
+  /// Manche suivante ou Fin de partie
   Future<void> proceedToNextStep() async {
     if (_isLoading) return;
     _setLoading(true);
@@ -262,8 +247,8 @@ class HotColdGameNotifier extends ChangeNotifier {
         'round': 2,
         'theme': selectedTheme,
         'targetWord': newWord,
-        'history': [], // Reset historique
-        'isCorrect': false, // Reset victoire
+        'history': [],
+        'isCorrect': false,
       };
 
       await _commService.updateGameDataBatch(updateData);

@@ -16,11 +16,7 @@ class AppProviders extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => UserProvider()),
-        ChangeNotifierProvider(
-          create: (_) => AudioProvider(),
-          lazy:
-              false, // <--- Force la création immédiate pour lancer la musique
-        ),
+        ChangeNotifierProvider(create: (_) => AudioProvider(), lazy: false),
         ChangeNotifierProvider(create: (_) => VibrationProvider()),
         ChangeNotifierProvider(create: (_) => RoomProvider()),
         ChangeNotifierProvider(create: (_) => GameSessionProvider()),

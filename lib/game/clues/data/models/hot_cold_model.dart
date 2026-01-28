@@ -21,7 +21,7 @@ class HotColdGameDataModel {
   });
 
   factory HotColdGameDataModel.fromJson(Map<String, dynamic> json) {
-    // Conversion sécurisée de la liste JSON en List<Map<String, String>>
+    // conversion de la liste JSON en List<Map<String, String>>
     final rawHistory = json['history'] as List<dynamic>? ?? [];
     final List<Map<String, String>> historyList = rawHistory.map((item) {
       return Map<String, String>.from(item as Map);
@@ -46,7 +46,7 @@ class HotColdGameDataModel {
     };
   }
 
-  /// Helper pour obtenir la dernière température envoyée par le Maître
+  /// helper pour obtenir la dernière température envoyée par le Maître de la manche
   String get currentTemperature =>
       history.isNotEmpty ? (history.last['temperature'] ?? 'froid') : 'froid';
 }

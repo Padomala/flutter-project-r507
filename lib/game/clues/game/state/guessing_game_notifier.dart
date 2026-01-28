@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'dart:async'; // Added for StreamSubscription
+import 'dart:async';
 import 'dart:math';
 import '../../core/game_enums.dart';
 import '../../core/constants.dart';
@@ -14,8 +14,8 @@ import '../../data/models/game_data_model.dart';
 class GuessingGameNotifier extends ChangeNotifier {
   /// Identifiant unique de la partie.
   final String gameId;
-  final String? playerAId; // Optionnel: UUID du joueur A (pour orchestrateur)
-  final String? playerBId; // Optionnel: UUID du joueur B (pour orchestrateur)
+  final String? playerAId;
+  final String? playerBId;
   final CommunicationService _commService;
 
   /// Identifiant du joueur local (A ou B).
@@ -69,9 +69,7 @@ class GuessingGameNotifier extends ChangeNotifier {
       return GameStateEnum.results;
     }
 
-    // Sinon, on est en plein jeu (Descripteur parle, Devineur tape)
-    return GameStateEnum
-        .playerATurn; // On utilise cet enum comme "En cours de jeu"
+    return GameStateEnum.playerATurn;
   }
 
   // Initialisation (Création Round 1)
@@ -103,34 +101,30 @@ class GuessingGameNotifier extends ChangeNotifier {
   void _initializeGame() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null || _isDisposed) {
-      debugPrint('🛑 GuessingGame: Pas d\'utilisateur connecté');
+      debugPrint('GuessingGame: Pas d\'utilisateur connecté');
       return;
     }
 
-    debugPrint('🏁 Init GuessingGame. User: ${user.id}. GameId: $gameId');
+    debugPrint('Init GuessingGame. User: ${user.id}. GameId: $gameId');
     debugPrint('Args: playerA=$playerAId, playerB=$playerBId');
 
     var gameMetadata = await _commService.getGameMetadata();
     if (_isDisposed) return;
 
-    // Mode Orchestrateur Check
     if (playerAId != null && playerBId != null) {
       if (user.id == playerAId) {
         _localPlayerId = PlayerId.playerA;
-        debugPrint('✅ Role: Player A');
+        debugPrint('Role: Player A');
       } else if (user.id == playerBId) {
         _localPlayerId = PlayerId.playerB;
-        debugPrint('✅ Role: Player B');
+        debugPrint('Role: Player B');
       } else {
         debugPrint(
           '⛔ ERROR: User ID ${user.id} introuvable dans [$playerAId, $playerBId]',
         );
-        // Fallback pour ne pas crash: prendre A par défaut mais c'est risqué
-        // Mieux vaut return, mais le widget restera en waiting.
         return;
       }
 
-      // Création lazy
       if (gameMetadata == null) {
         if (_localPlayerId == PlayerId.playerA) {
           debugPrint('Creating game (Player A)...');
@@ -140,17 +134,11 @@ class GuessingGameNotifier extends ChangeNotifier {
           if (_isDisposed) return;
         } else {
           debugPrint('Waiting for Player A to create game...');
-          // Player B doit peut-être attendre que A crée ?
-          // Normalement createGameData gère l'upsert s'il n'existe pas.
-          // Mais ici on utilise createInitialGameData, faisons pareil.
           await _createInitialGameData(round: 1, playerBId: playerBId);
           if (_isDisposed) return;
         }
       }
-    }
-    // Mode Standalone
-    else {
-      // ... logic existante ...
+    } else {
       if (gameMetadata == null) {
         await _createInitialGameData(round: 1);
         if (_isDisposed) return;
@@ -171,12 +159,11 @@ class GuessingGameNotifier extends ChangeNotifier {
       }
     }
 
-    // Chargement initial
     final initialGameData = await _commService.getGameData();
     if (_isDisposed) return;
 
     if (initialGameData != null) {
-      debugPrint('📥 Initial Data loaded: $initialGameData');
+      debugPrint('Initial Data loaded: $initialGameData');
       final gameData = GuessingGameDataModel.fromJson(initialGameData);
       final int round = initialGameData['round'] ?? 1;
       final bool gameOver = initialGameData['game_over'] ?? false;
@@ -192,11 +179,9 @@ class GuessingGameNotifier extends ChangeNotifier {
       notifyListeners();
     }
 
-    // Écoute Live
-    debugPrint('🎧 Subscribing to game stream...');
+    debugPrint('Subscribing to game stream...');
     _gameSubscription = _commService.gameStream.listen((row) {
       if (row.isEmpty || _isDisposed) return;
-      // debugPrint('⚡ Live Update: $row');
 
       final playerBIdRow = row['player_b_id'];
       final jsonData = row['data'] as Map<String, dynamic>? ?? {};

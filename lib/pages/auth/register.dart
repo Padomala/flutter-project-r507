@@ -3,7 +3,6 @@ import 'package:game_v1/store/provider/user_provider.dart';
 import 'package:provider/provider.dart';
 import '../../widget/atoms/atom_background_page.dart';
 import '../../widget/atoms/atom_text_field.dart';
-import 'package:game_v1/core/services/supabase_service.dart';
 import '../../app_colors.dart';
 import '../../widget/atoms/atom_button.dart';
 import 'package:game_v1/core/utils/supabase_error_helper.dart';
@@ -39,10 +38,6 @@ class _RegisterPageState extends State<Register> {
 
     if (_isLoading) return;
 
-    // --- VALIDATIONS LOCALES ---
-    // On utilise SupabaseErrorHandler ici aussi pour avoir la même SnackBar rouge partout
-    // (Assure-toi d'avoir ajouté la ligne "if (error is String)" dans ton helper)
-
     final email = _emailController.text.trim();
     final pseudo = _pseudoController.text.trim();
     final password = _passwordController.text;
@@ -75,7 +70,6 @@ class _RegisterPageState extends State<Register> {
       return;
     }
 
-    // --- INSCRIPTION SERVEUR ---
     setState(() {
       _isLoading = true;
     });
@@ -109,15 +103,11 @@ class _RegisterPageState extends State<Register> {
         );
       }
     } catch (e) {
-      // Gestion centralisée des erreurs (AuthException, Réseau, etc.)
       if (mounted) SupabaseErrorHandler.show(context, e);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
-
-  // J'ai supprimé _translateRegisterError et _showErrorSnackBar car
-  // tout est maintenant géré par le SupabaseErrorHandler. C'est plus propre !
 
   @override
   Widget build(BuildContext context) {

@@ -32,7 +32,7 @@ class RoomParticipant {
   final String roomId;
   final bool isHost;
   final DateTime joinedAt;
-  final String? pseudo; // Joined from profiles potentially
+  final String? pseudo;
   final String? avatarUrl;
 
   RoomParticipant({
@@ -45,7 +45,6 @@ class RoomParticipant {
   });
 
   factory RoomParticipant.fromJson(Map<String, dynamic> json) {
-    // Safe parsing for profiles (can be Map or List depending on Supabase version/relation detection)
     final profileData = json['profiles'];
     String? pseudoVar = 'Unknown';
     String? avatarUrlVar;
@@ -62,8 +61,10 @@ class RoomParticipant {
       id: json['user_id'],
       roomId: json['room_id'],
       isHost: json['is_host'] ?? false,
-      joinedAt: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()), 
-      pseudo: pseudoVar ?? 'Unknown', 
+      joinedAt: DateTime.parse(
+        json['created_at'] ?? DateTime.now().toIso8601String(),
+      ),
+      pseudo: pseudoVar ?? 'Unknown',
       avatarUrl: avatarUrlVar,
     );
   }

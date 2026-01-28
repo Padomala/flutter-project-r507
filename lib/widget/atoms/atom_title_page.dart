@@ -25,7 +25,7 @@ class AtomTitle extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // --- Ellipse géante ---
+          // ellipse en haut
           Positioned(
             top: -210,
             left: -100,
@@ -40,7 +40,6 @@ class AtomTitle extends StatelessWidget {
             ),
           ),
 
-          // --- Boutons top bar (retour + settings) ---
           Positioned(
             top: 10,
             left: 10,
@@ -48,7 +47,6 @@ class AtomTitle extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Bouton retour (optionnel)
                 if (showBack)
                   IconButton(
                     icon: const Icon(
@@ -58,8 +56,7 @@ class AtomTitle extends StatelessWidget {
                     onPressed: onBack ?? () => Navigator.pop(context),
                   )
                 else
-                  const SizedBox(width: 48), // pour conserver l'alignement
-                // Bouton settings
+                  const SizedBox(width: 48),
                 IconButton(
                   icon: const Icon(Icons.settings, color: Colors.white),
                   onPressed: onSettings,
@@ -68,7 +65,6 @@ class AtomTitle extends StatelessWidget {
             ),
           ),
 
-          // --- Titre centré en bas du header ---
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(

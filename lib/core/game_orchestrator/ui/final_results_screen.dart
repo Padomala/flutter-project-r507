@@ -78,7 +78,6 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
 
     try {
       if (amIHost && currentRoom != null) {
-        debugPrint('🔄 [HOST] Préparation de la revanche...');
         await Supabase.instance.client
             .from('rooms')
             .update({'status': 'waiting'})

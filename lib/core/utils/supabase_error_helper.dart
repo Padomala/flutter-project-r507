@@ -7,14 +7,14 @@ class SupabaseErrorHandler {
     _showSnackBar(context, message);
   }
 
-  // traduit l'erreur en un message français
+  /// traduit l'erreur en un message français
   static String _getErrorMessage(Object error) {
     if (error is String) return error;
 
     if (error is AuthException) {
       final msg = error.message;
 
-      // erreurs de Connexion
+      /// erreurs de Connexion
       if (msg.contains('Invalid login credentials')) {
         return 'Email ou mot de passe incorrect.';
       }
@@ -25,7 +25,7 @@ class SupabaseErrorHandler {
         return 'Identifiants invalides.';
       }
 
-      // erreurs d'Inscription
+      /// erreurs d'Inscription
       if (msg.contains('User already registered')) {
         return 'Cette adresse email est déjà utilisée.';
       }

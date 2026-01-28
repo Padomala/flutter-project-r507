@@ -26,8 +26,7 @@ class BottomNavBar extends StatelessWidget {
                 if (userProvider.isConnected) {
                   Navigator.pushNamed(context, '/profile');
                 } else {
-                  // User requested explicitly: Go to Register if not connected when clicking Profile
-                  Navigator.pushNamed(context, '/register'); 
+                  Navigator.pushNamed(context, '/register');
                 }
               },
               icon: Icon(Icons.person, color: Colors.white, size: 28),

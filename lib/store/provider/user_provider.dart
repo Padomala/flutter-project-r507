@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:game_v1/core/services/supabase_service.dart'; // Make sure this path is correct
+import 'package:game_v1/core/services/supabase_service.dart';
 import '../model/user.dart';
 
 class UserProvider with ChangeNotifier {
   // Instance of our service to handle backend calls
   final SupabaseService _authService = SupabaseService();
 
-
-  UserProvider() : _currentUser = const UserModel(id: '', name: '', email: '', isConnected: false);
+  UserProvider()
+    : _currentUser = const UserModel(
+        id: '',
+        name: '',
+        email: '',
+        isConnected: false,
+      );
 
   UserModel _currentUser;
   bool _isConnecting = false;
@@ -26,10 +31,7 @@ class UserProvider with ChangeNotifier {
   /// --- AUTHENTICATION ACTIONS ---
 
   /// Logs in the user using Email and Password via Supabase
-  Future<void> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> login({required String email, required String password}) async {
     _setConnecting(true);
 
     try {
@@ -53,12 +55,22 @@ class UserProvider with ChangeNotifier {
       } else {
         // Log explicitly if auth failed
         debugPrint("Auth failed: No user returned");
-        _currentUser = const UserModel(id: '', name: '', email: '', isConnected: false);
+        _currentUser = const UserModel(
+          id: '',
+          name: '',
+          email: '',
+          isConnected: false,
+        );
       }
     } catch (e) {
       // 4. On error, ensure we are reset to disconnected
-      _currentUser = const UserModel(id: '', name: '', email: '', isConnected: false);
-      rethrow; 
+      _currentUser = const UserModel(
+        id: '',
+        name: '',
+        email: '',
+        isConnected: false,
+      );
+      rethrow;
     } finally {
       // 5. Always stop loading and notify UI
       _setConnecting(false);
@@ -74,10 +86,14 @@ class UserProvider with ChangeNotifier {
   }) async {
     _setConnecting(true);
     try {
-      final response = await _authService.signUp(email, password, username: username);
-      
+      final response = await _authService.signUp(
+        email,
+        password,
+        username: username,
+      );
+
       final authUser = response.user;
-      
+
       if (authUser != null) {
         // Depending on your app flow, you might want to log them in directly
         // or ask them to verify email. For now, let's log them in locally.
@@ -103,8 +119,12 @@ class UserProvider with ChangeNotifier {
 
     _setConnecting(true);
     try {
-      await _authService.updateProfile(userId, username: username, avatarUrl: avatarUrl);
-      
+      await _authService.updateProfile(
+        userId,
+        username: username,
+        avatarUrl: avatarUrl,
+      );
+
       // Update local state
       var updatedUser = _currentUser;
       if (username != null) {
@@ -114,7 +134,6 @@ class UserProvider with ChangeNotifier {
         updatedUser = updatedUser.copyWith(avatarUrl: avatarUrl);
       }
       _currentUser = updatedUser;
-
     } catch (e) {
       rethrow;
     } finally {
@@ -132,7 +151,12 @@ class UserProvider with ChangeNotifier {
       // Even if Supabase errors out, we want to clear local state
       debugPrint("Error signing out: $e");
     } finally {
-      _currentUser = const UserModel(id: '', name: '', email: '', isConnected: false);
+      _currentUser = const UserModel(
+        id: '',
+        name: '',
+        email: '',
+        isConnected: false,
+      );
       _setConnecting(false);
       notifyListeners();
     }

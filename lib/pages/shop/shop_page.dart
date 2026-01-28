@@ -16,12 +16,7 @@ class ShopPage extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            // Arrière-plan
-            const BackgroundPage(
-              pathBackground: 'assets/images/salon.png',
-            ),
-
-            // Titre tout en haut
+            const BackgroundPage(pathBackground: 'assets/images/salon.png'),
             Positioned(
               top: 40,
               left: 0,
@@ -43,13 +38,10 @@ class ShopPage extends StatelessWidget {
                 ),
               ),
             ),
-
-            // Icône + Texte au centre
             Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Icône warning
                   Icon(
                     Icons.warning_amber_rounded,
                     color: Colors.white,
@@ -64,8 +56,6 @@ class ShopPage extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 20),
-
-                  // Texte “Page en cours de création”
                   Text(
                     "Page en cours de création",
                     textAlign: TextAlign.center,
@@ -90,11 +80,14 @@ class ShopPage extends StatelessWidget {
               top: 40,
               left: 20,
               child: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
+                icon: const Icon(
+                  Icons.arrow_back,
+                  color: Colors.white,
+                  size: 30,
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
             ),
-
           ],
         ),
       ),

@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/utils/avatar_helper.dart';
 
-// Définition d'un modèle simple pour les données des joueurs
 class Player {
   final String pseudo;
-  final String avatarUrl; // Utilisé pour une image ou un placeholder
+  final String avatarUrl;
   final bool isHost;
 
   const Player({
@@ -15,12 +14,12 @@ class Player {
 }
 
 class AtomHub extends StatelessWidget {
-  // Liste des joueurs dans la salle. Max 2.
+  // liste des joueurs dans la salle. (max 2 joueurs)
   final List<Player> players;
 
   const AtomHub({super.key, required this.players});
 
-  // Widget interne pour afficher un seul joueur
+  // widget pour afficher un seul joueur
   Widget _buildPlayerTile(Player player) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
@@ -44,9 +43,7 @@ class AtomHub extends StatelessWidget {
             backgroundImage: player.avatarUrl.isNotEmpty
                 ? AvatarHelper.getAvatarImage(player.avatarUrl)
                 : null,
-            onBackgroundImageError: (exception, stackTrace) {
-              // Fallback handled by child if backgroundImage fails (conceptually, though CircleAvatar logic is tricky)
-            },
+            onBackgroundImageError: (exception, stackTrace) {},
             child: player.avatarUrl.isEmpty
                 ? const Icon(Icons.person, color: Colors.white)
                 : null,
@@ -68,7 +65,6 @@ class AtomHub extends StatelessWidget {
             ),
           ),
 
-          // Indicateur de Host
           if (player.isHost)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -88,8 +84,6 @@ class AtomHub extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    //afficher le nombre de joueurs en dans la console
-    print("Nombre de joueurs: ${players}");
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 400),
@@ -97,7 +91,6 @@ class AtomHub extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Titre de la section
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Text(
@@ -112,10 +105,9 @@ class AtomHub extends StatelessWidget {
             ),
             const SizedBox(height: 10),
 
-            // Liste des tuiles de joueurs
             ...players.map(_buildPlayerTile).toList(),
 
-            // Afficher une tuile "En attente" si un emplacement est libre
+            // affiche "En attente" si un emplacement est libre
             if (players.length < 2)
               Container(
                 margin: const EdgeInsets.symmetric(

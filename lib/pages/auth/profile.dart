@@ -41,7 +41,6 @@ class _ProfilePageState extends State<Profile> {
     try {
       await context.read<UserProvider>().logout();
       if (mounted) {
-        // Pop everything until the first route (ROOT), which is SupabaseGate -> HomePage
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (e) {
@@ -55,20 +54,14 @@ class _ProfilePageState extends State<Profile> {
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
 
-    // 1. Listen to the UserProvider
     final userProvider = context.watch<UserProvider>();
     final user = userProvider.user;
 
-    // 2. Sync controllers with User Data (only if not currently editing)
     if (!_isEditing) {
       _usernameController.text = user.name;
       _emailController.text = user.email;
-      // Also sync selected avatar only if we haven't selected a new one yet?
-      // Actually, when entering edit mode, we want to start with current avatar.
     }
 
-    // Determine which image to show in the big circle
-    // If editing and user picked one, show that. Else show user's current.
     final displayAvatarUrl = (_isEditing && _selectedAvatarUrl != null)
         ? _selectedAvatarUrl
         : user.avatarUrl;
@@ -76,7 +69,6 @@ class _ProfilePageState extends State<Profile> {
     return Scaffold(
       body: Stack(
         children: [
-          // Arrière-plan
           const BackgroundPage(
             pathBackground: 'assets/images/voiture_rouge.png',
           ),
@@ -105,7 +97,6 @@ class _ProfilePageState extends State<Profile> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // En-tête profil
                     const Text(
                       'MON PROFIL',
                       style: TextStyle(
@@ -116,7 +107,7 @@ class _ProfilePageState extends State<Profile> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Avatar
+                    // avatar
                     CircleAvatar(
                       radius: 50,
                       backgroundColor: Colors.white,
@@ -133,7 +124,6 @@ class _ProfilePageState extends State<Profile> {
                     ),
                     const SizedBox(height: 10),
 
-                    // Display Name (Read-only view at top)
                     Text(
                       user.name.isEmpty ? 'Utilisateur' : user.name,
                       style: const TextStyle(
@@ -144,7 +134,6 @@ class _ProfilePageState extends State<Profile> {
                     ),
                     const SizedBox(height: 20),
 
-                    // --- AVATAR SELECTOR (Visible only in Edit Mode) ---
                     if (_isEditing) ...[
                       const Align(
                         alignment: Alignment.centerLeft,
@@ -175,9 +164,7 @@ class _ProfilePageState extends State<Profile> {
                               },
                               child: Container(
                                 margin: const EdgeInsets.only(right: 12),
-                                padding: const EdgeInsets.all(
-                                  2,
-                                ), // border width
+                                padding: const EdgeInsets.all(2),
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: isSelected
@@ -198,7 +185,7 @@ class _ProfilePageState extends State<Profile> {
                       const SizedBox(height: 20),
                     ],
 
-                    // Champs modifiables
+                    // champs modifiables
                     CustomTextField(
                       label: "NOM D'UTILISATEUR",
                       hintText: "Entrez votre nom d'utilisateur",
@@ -208,7 +195,6 @@ class _ProfilePageState extends State<Profile> {
                     ),
                     const SizedBox(height: 15),
 
-                    // Email is usually read-only
                     CustomTextField(
                       label: "EMAIL",
                       hintText: "Entrez votre email",
@@ -219,7 +205,6 @@ class _ProfilePageState extends State<Profile> {
                     ),
                     const SizedBox(height: 15),
 
-                    // Bouton Éditer / Enregistrer
                     SizedBox(
                       width: double.infinity,
                       child: AtomButton(
@@ -229,14 +214,13 @@ class _ProfilePageState extends State<Profile> {
                             try {
                               await context.read<UserProvider>().updateProfile(
                                 username: _usernameController.text.trim(),
-                                avatarUrl:
-                                    _selectedAvatarUrl, // Pass selected avatar
+                                avatarUrl: _selectedAvatarUrl,
                               );
 
                               if (context.mounted) {
                                 setState(() {
                                   _isEditing = false;
-                                  _selectedAvatarUrl = null; // Reset selection
+                                  _selectedAvatarUrl = null;
                                 });
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
@@ -271,16 +255,14 @@ class _ProfilePageState extends State<Profile> {
 
                     const SizedBox(height: 15),
 
-                    // --- NEW: LOGOUT BUTTON ---
                     SizedBox(
                       width: double.infinity,
                       child: AtomButton(
                         label: 'SE DÉCONNECTER',
                         onPressed: _onLogout,
-                        // Assuming you have a red color, otherwise use Colors.red
                         bgColor: Colors.redAccent,
                         width: double.infinity,
-                        height: 60, // Slightly smaller than primary action
+                        height: 60,
                       ),
                     ),
 
@@ -291,13 +273,12 @@ class _ProfilePageState extends State<Profile> {
             ),
           ),
 
-          // Back Button (Moved to end for Z-Index)
+          // Back Button
           Positioned(
             top: 60,
             left: 40,
             child: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
-              // Ensure we have a background circle so it's visible over any content
               style: IconButton.styleFrom(backgroundColor: Colors.black26),
               onPressed: () => Navigator.pushNamed(context, '/home'),
             ),

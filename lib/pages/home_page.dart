@@ -15,11 +15,9 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // Image d'arrière-plan associée à la maquette
           Positioned.fill(
             child: Image.asset('assets/images/feu_vert.png', fit: BoxFit.cover),
           ),
-          // Dégradé sombre pour lisibilité
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -42,11 +40,9 @@ class HomePage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
 
                 children: [
-                  // Titre
                   Spacer(),
                   AtomTitle(text: "SPLIT"),
                   SizedBox(height: 16),
-                  // Boutons principaux en Molécule
                   Column(
                     children: [
                       AtomButton(
@@ -78,28 +74,6 @@ class HomePage extends StatelessWidget {
                         width: double.infinity,
                         height: 120,
                       ),
-                      // ##### DEBUG ##### début
-                      SizedBox(height: cardSpacing),
-                      AtomButton(
-                        label: 'CAESAR DEBUG',
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/game/caesar_game');
-                        },
-                        bgColor: const Color.fromARGB(255, 161, 32, 155),
-                        width: double.infinity,
-                        height: 120,
-                      ),
-                      SizedBox(height: cardSpacing),
-                      AtomButton(
-                        label: 'MICROPHONE DEBUG',
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/game/microphone_game');
-                        },
-                        bgColor: const Color.fromARGB(255, 161, 32, 155),
-                        width: double.infinity,
-                        height: 120,
-                      ),
-                      // ##### DEBUG ##### fin
                     ],
                   ),
                   SizedBox(height: 56),
@@ -108,7 +82,6 @@ class HomePage extends StatelessWidget {
               ),
             ),
           ),
-          // Boutons de navigation inférieurs (barre fixe)
           const BottomNavBar(),
         ],
       ),

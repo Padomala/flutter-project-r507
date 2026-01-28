@@ -28,7 +28,6 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
     if (_formKey.currentState?.validate() ?? false) {
       final code = _controller.text;
 
-      // Vérifier que le widget est encore monté
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -46,7 +45,6 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
       } catch (e) {
         if (!mounted) return;
 
-        // Récupérer ScaffoldMessenger juste avant de l'utiliser
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur: Impossible de rejoindre la room. $e'),
@@ -58,8 +56,6 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
 
   String? _validator(String? value) {
     if (value == null || value.trim().isEmpty) return 'Champ requis';
-    // if (value.length != 6) return 'Le code doit comporter 6 chiffres';
-    // Relaxed validation as we might generate strings
     return null;
   }
 
@@ -68,10 +64,7 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
     return Scaffold(
       body: Stack(
         children: [
-          const BackgroundPage(
-            pathBackground: "assets/images/carrefour.png",
-          ), // corrected path
-          // Back Button
+          const BackgroundPage(pathBackground: "assets/images/carrefour.png"),
           Positioned(
             top: 40,
             left: 20,
@@ -92,7 +85,6 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
                     constraints: const BoxConstraints(maxWidth: 320),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
-                      // FORMULAIARE START
                       child: Form(
                         key: _formKey,
                         child: Column(
@@ -103,14 +95,10 @@ class _JoinGameBodyMinimalState extends State<JoinPartyPage> {
                               child: Padding(
                                 padding: const EdgeInsets.all(6),
                                 child: Container(
-                                  padding: const EdgeInsets.all(
-                                    8,
-                                  ), // padding interne
+                                  padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
                                     color: const Color.fromARGB(100, 0, 0, 0),
-                                    borderRadius: BorderRadius.circular(
-                                      8,
-                                    ), // radius
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
                                     'Code de la partie',
