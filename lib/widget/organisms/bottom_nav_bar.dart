@@ -10,20 +10,34 @@ class BottomNavBar extends StatelessWidget {
     final userProvider = context.watch<UserProvider>();
     final user = userProvider.user;
 
+    // route actuelle
+    final currentRoute = ModalRoute.of(context)?.settings.name;
+
     return Positioned(
-      left: 0,
-      right: 0,
-      bottom: 0,
+      left: 12,
+      right: 12,
+      bottom: 12,
       child: Container(
+        height: 70,
         decoration: BoxDecoration(
-          color: Colors.green,
-          border: Border.all(color: Colors.white, width: 12),
+          color: const Color(0xFF4CAF50),
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: Colors.white, width: 4),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 10,
+              spreadRadius: 2,
+              offset: const Offset(0, 5),
+            ),
+          ],
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            IconButton(
+            _NavItem(
+              tooltip: 'Profil',
               onPressed: () {
                 if (userProvider.isConnected) {
                   Navigator.pushNamed(context, '/profile');
@@ -31,40 +45,88 @@ class BottomNavBar extends StatelessWidget {
                   Navigator.pushNamed(context, '/register');
                 }
               },
-              // Si connecté et avatar présent -> Photo, Sinon -> Icone
-              icon:
+              child:
                   (userProvider.isConnected &&
                       user.avatarUrl != null &&
                       user.avatarUrl!.isNotEmpty)
-                  ? CircleAvatar(
-                      radius: 16,
-                      backgroundColor: Colors.white,
-                      backgroundImage: NetworkImage(user.avatarUrl!),
-                      onBackgroundImageError: (_, __) {
-                        debugPrint("Erreur chargement avatar");
-                      },
+                  ? Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: CircleAvatar(
+                        radius: 14,
+                        backgroundColor: Colors.white,
+                        backgroundImage: NetworkImage(user.avatarUrl!),
+                        onBackgroundImageError: (_, __) {
+                          debugPrint("Erreur chargement avatar");
+                        },
+                      ),
                     )
                   : const Icon(Icons.person, color: Colors.white, size: 28),
-              tooltip: 'Profil',
             ),
-
-            IconButton(
+            _NavItem(
+              tooltip: 'Accueil',
+              isActive: currentRoute == '/home',
               onPressed: () {
-                if (ModalRoute.of(context)?.settings.name != '/home') {
+                if (currentRoute != '/home') {
                   Navigator.pushNamed(context, '/home');
                 }
               },
-              icon: const Icon(Icons.home, color: Colors.white, size: 28),
-              tooltip: 'Accueil',
+              child: const Icon(
+                Icons.home_rounded,
+                color: Colors.white,
+                size: 32,
+              ),
             ),
-            IconButton(
+            _NavItem(
+              tooltip: 'Shop',
               onPressed: () {
                 Navigator.pushNamed(context, '/shop');
               },
-              icon: const Icon(Icons.store, color: Colors.white, size: 28),
-              tooltip: 'Shop',
+              child: const Icon(
+                Icons.store_mall_directory_rounded,
+                color: Colors.white,
+                size: 28,
+              ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// widget pour les boutons de navigation
+class _NavItem extends StatelessWidget {
+  final VoidCallback onPressed;
+  final Widget child;
+  final String tooltip;
+  final bool isActive;
+
+  const _NavItem({
+    required this.onPressed,
+    required this.child,
+    required this.tooltip,
+    this.isActive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(30),
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: isActive
+              ? BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                )
+              : null,
+          child: Tooltip(message: tooltip, child: child),
         ),
       ),
     );
