@@ -22,10 +22,20 @@ class _LoginPageState extends State<Login> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  // 1. Déclarer une variable pour stocker la référence au Messenger
+  late ScaffoldMessengerState _scaffoldMessenger;
+
+  // 2. Capturer la référence quand le contexte est prêt et encore lié à l'arbre
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _scaffoldMessenger = ScaffoldMessenger.of(context);
+  }
+
   @override
   void dispose() {
-    // nettoie les messages si l'utilisateur quitte la page
-    ScaffoldMessenger.of(context).clearSnackBars();
+    // 3. Utiliser la référence capturée plutôt que ScaffoldMessenger.of(context)
+    _scaffoldMessenger.clearSnackBars();
 
     _emailController.dispose();
     _passwordController.dispose();
