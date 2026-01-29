@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:game_v1/pages/auth/login.dart';
-import 'package:game_v1/pages/auth/profile.dart';
 import 'package:game_v1/pages/home_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -20,10 +18,10 @@ class SupabaseGate extends StatelessWidget {
             body: Center(child: CircularProgressIndicator()),
           );
         }
-        
+
         // Récupère l'événement d'état d'authentification
         final AuthState? authState = snapshot.data;
-        
+
         // 2. Vérifie la présence d'une session valide
         // Si authState est non nul ET la session à l'intérieur est non nulle
         if (authState != null && authState.session != null) {
