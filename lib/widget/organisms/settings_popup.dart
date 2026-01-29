@@ -5,8 +5,16 @@ import '../../store/provider/audio_provider.dart';
 import '../../store/provider/vibration_provider.dart';
 import '../../main.dart';
 
-class SettingsPopup extends StatelessWidget {
+class SettingsPopup extends StatefulWidget {
   const SettingsPopup({super.key});
+
+  @override
+  State<SettingsPopup> createState() => _SettingsPopupState();
+}
+
+class _SettingsPopupState extends State<SettingsPopup> {
+  // verrouille le bouton si la popup est déjà ouverte
+  bool _isDialogOpen = false;
 
   @override
   Widget build(BuildContext context) {
@@ -16,11 +24,22 @@ class SettingsPopup extends StatelessWidget {
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: GestureDetector(
-          onTap: () {
+          onTap: () async {
+            // si la dialog est déjà ouverte, on ne fait rien
+            if (_isDialogOpen) return;
+
             final navContext = navigatorKey.currentContext;
             if (navContext == null) return;
-            showDialog(
+
+            // on verrouille : la dialog va s'ouvrir
+            setState(() {
+              _isDialogOpen = true;
+            });
+
+            // on attend que la dialog se ferme
+            await showDialog(
               context: navContext,
+              barrierDismissible: true,
               builder: (context) => StatefulBuilder(
                 builder: (context, setStateDialog) => AlertDialog(
                   backgroundColor: Colors.yellow,
@@ -36,7 +55,7 @@ class SettingsPopup extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // vibration
+                        // Vibration
                         Consumer<VibrationProvider>(
                           builder: (context, vibration, child) {
                             return ToggleButton(
@@ -54,8 +73,7 @@ class SettingsPopup extends StatelessWidget {
                           },
                         ),
                         const SizedBox(height: 12),
-
-                        // music
+                        // Musique
                         Consumer<AudioProvider>(
                           builder: (context, audio, child) {
                             return ToggleButton(
@@ -87,14 +105,21 @@ class SettingsPopup extends StatelessWidget {
                 ),
               ),
             );
+
+            //si dialog fermée on déverrouille le bouton
+            if (mounted) {
+              setState(() {
+                _isDialogOpen = false;
+              });
+            }
           },
           child: Container(
             width: 40,
             height: 40,
-            decoration: const BoxDecoration(
-              color: Colors.yellow,
+            decoration: BoxDecoration(
+              color: _isDialogOpen ? Colors.grey : Colors.yellow,
               shape: BoxShape.circle,
-              boxShadow: [
+              boxShadow: const [
                 BoxShadow(
                   color: Colors.black26,
                   blurRadius: 6,
@@ -102,7 +127,7 @@ class SettingsPopup extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Icon(Icons.settings, color: Colors.black, size: 28),
+            child: Icon(Icons.settings, color: Colors.black, size: 28),
           ),
         ),
       ),
