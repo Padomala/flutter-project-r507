@@ -128,10 +128,6 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
     final amIHost = roomProvider.amIHost;
     final screenSize = MediaQuery.of(context).size;
 
-    // --- CORRECTION DU BUG ICI ---
-    // Si on a fini de charger localement (_isLoading == false)
-    // MAIS que la session est null (l'hôte a quitté/supprimé la session),
-    // alors on doit sortir de l'écran.
     if (!_isLoading && session == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -179,27 +175,6 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
             pathBackground: 'assets/images/voiture_rouge.png',
           ),
 
-          // 2. Confetti
-          Align(
-            alignment: Alignment.topCenter,
-            child: ConfettiWidget(
-              confettiController: _confettiController,
-              blastDirectionality: BlastDirectionality.explosive,
-              particleDrag: 0.05,
-              emissionFrequency: 0.05,
-              numberOfParticles: 30,
-              gravity: 0.1,
-              shouldLoop: false,
-              colors: const [
-                AppColors.green,
-                AppColors.blue,
-                AppColors.yellow,
-                AppColors.red,
-              ],
-            ),
-          ),
-
-          // 3. CONTENU
           Center(
             child: SingleChildScrollView(
               child: Container(
@@ -449,6 +424,24 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
                   ],
                 ),
               ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirectionality: BlastDirectionality.explosive,
+              particleDrag: 0.05,
+              emissionFrequency: 0.05,
+              numberOfParticles: 20,
+              gravity: 0.1,
+              shouldLoop: false,
+              colors: const [
+                AppColors.green,
+                AppColors.blue,
+                AppColors.yellow,
+                AppColors.red,
+              ],
             ),
           ),
         ],
