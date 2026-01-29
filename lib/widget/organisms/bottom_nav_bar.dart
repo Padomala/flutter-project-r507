@@ -10,8 +10,9 @@ class BottomNavBar extends StatelessWidget {
     final userProvider = context.watch<UserProvider>();
     final user = userProvider.user;
 
-    // route actuelle
     final currentRoute = ModalRoute.of(context)?.settings.name;
+
+    final isHomeActive = currentRoute == '/home' || currentRoute == '/';
 
     return Positioned(
       left: 12,
@@ -38,11 +39,17 @@ class BottomNavBar extends StatelessWidget {
           children: [
             _NavItem(
               tooltip: 'Profil',
+              isActive: currentRoute == '/profile',
               onPressed: () {
                 if (userProvider.isConnected) {
-                  Navigator.pushNamed(context, '/profile');
+                  // Si on est déjà sur le profil, on ne fait rien
+                  if (currentRoute != '/profile') {
+                    Navigator.pushNamed(context, '/profile');
+                  }
                 } else {
-                  Navigator.pushNamed(context, '/register');
+                  if (currentRoute != '/register') {
+                    Navigator.pushNamed(context, '/register');
+                  }
                 }
               },
               child:
@@ -67,10 +74,10 @@ class BottomNavBar extends StatelessWidget {
             ),
             _NavItem(
               tooltip: 'Accueil',
-              isActive: currentRoute == '/home',
+              isActive: isHomeActive,
               onPressed: () {
-                if (currentRoute != '/home') {
-                  Navigator.pushNamed(context, '/home');
+                if (!isHomeActive) {
+                  Navigator.of(context).popUntil((route) => route.isFirst);
                 }
               },
               child: const Icon(
@@ -81,8 +88,11 @@ class BottomNavBar extends StatelessWidget {
             ),
             _NavItem(
               tooltip: 'Shop',
+              isActive: currentRoute == '/shop',
               onPressed: () {
-                Navigator.pushNamed(context, '/shop');
+                if (currentRoute != '/shop') {
+                  Navigator.pushNamed(context, '/shop');
+                }
               },
               child: const Icon(
                 Icons.store_mall_directory_rounded,

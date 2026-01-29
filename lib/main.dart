@@ -39,17 +39,17 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.white,
         fontFamily: 'Motley_Forces',
       ),
-      initialRoute: null,
-      home: const SupabaseGate(),
+      initialRoute: '/',
       builder: (context, child) {
         return Stack(
           children: [
-            if (child != null) Positioned.fill(child: child),
+            Positioned.fill(child: child ?? const SizedBox.shrink()),
             const SettingsPopup(),
           ],
         );
       },
       routes: {
+        '/': (context) => const SupabaseGate(),
         '/home': (context) => HomePage(),
         '/create_party': (context) => CreatePartyPage(),
         '/join_party': (context) => JoinPartyPage(),
