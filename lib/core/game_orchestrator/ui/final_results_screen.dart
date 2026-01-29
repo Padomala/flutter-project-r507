@@ -161,11 +161,11 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
     final sortedEntries = safePlayerScores.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    final winnerId = sortedEntries.isNotEmpty ? sortedEntries.first.key : null;
-    final winnerName = _getWinnerName(winnerId);
-    final winnerScore = sortedEntries.isNotEmpty
-        ? sortedEntries.first.value
-        : 0;
+    // Calcul du score total de l'équipe
+    int teamTotalScore = 0;
+    for (var entry in sortedEntries) {
+      teamTotalScore += entry.value;
+    }
 
     return Scaffold(
       body: Stack(
@@ -200,17 +200,18 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
                   children: [
                     // --- TITRE ---
                     const Text(
-                      'RÉSULTATS',
+                      'SESSION TERMINÉE',
                       style: TextStyle(
-                        fontSize: 36,
+                        fontSize: 28,
                         fontWeight: FontWeight.w900,
                         color: AppColors.textColor,
                         letterSpacing: 1.5,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 20),
 
-                    // --- CARTE GAGNANT ---
+                    // --- CARTE RESULTAT EQUIPE ---
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -227,13 +228,13 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
                       child: Column(
                         children: [
                           const Icon(
-                            Icons.emoji_events,
+                            Icons.groups,
                             size: 60,
-                            color: Colors.amber,
+                            color: AppColors.blue,
                           ),
                           const SizedBox(height: 10),
                           const Text(
-                            "VAINQUEUR",
+                            "SCORE D'ÉQUIPE",
                             style: TextStyle(
                               color: Colors.grey,
                               fontWeight: FontWeight.bold,
@@ -243,19 +244,18 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
                           ),
                           const SizedBox(height: 5),
                           Text(
-                            winnerName.toUpperCase(),
+                            '$teamTotalScore',
                             style: const TextStyle(
                               color: AppColors.textColor,
-                              fontSize: 32,
+                              fontSize: 48,
                               fontWeight: FontWeight.w900,
                             ),
-                            textAlign: TextAlign.center,
                           ),
-                          Text(
-                            '$winnerScore POINTS',
-                            style: const TextStyle(
+                          const Text(
+                            'POINTS CUMULÉS',
+                            style: TextStyle(
                               color: AppColors.blue,
-                              fontSize: 24,
+                              fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -265,11 +265,11 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
 
                     const SizedBox(height: 30),
 
-                    // --- LISTE DES SCORES ---
+                    // --- LISTE DES CONTRIBUTIONS ---
                     const Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        "CLASSEMENT",
+                        "CONTRIBUTIONS",
                         style: TextStyle(
                           color: AppColors.textColor,
                           fontWeight: FontWeight.bold,
@@ -291,42 +291,35 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
                             const Divider(height: 1, color: Colors.black12),
                         itemBuilder: (context, index) {
                           final entry = sortedEntries[index];
-                          final isWinner = index == 0;
                           return ListTile(
                             leading: Container(
                               width: 30,
                               height: 30,
                               decoration: BoxDecoration(
-                                color: isWinner
-                                    ? Colors.amber
-                                    : Colors.grey.shade400,
+                                color: AppColors.blue.withOpacity(0.2),
                                 shape: BoxShape.circle,
                               ),
-                              child: Center(
-                                child: Text(
-                                  '${index + 1}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.person,
+                                  size: 18,
+                                  color: AppColors.blue,
                                 ),
                               ),
                             ),
                             title: Text(
                               _getWinnerName(entry.key),
-                              style: TextStyle(
-                                fontWeight: isWinner
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
                                 color: AppColors.textColor,
                               ),
                             ),
                             trailing: Text(
-                              '${entry.value} pts',
-                              style: const TextStyle(
+                              '+ ${entry.value} pts',
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                                color: AppColors.blue,
+                                fontSize: 16,
+                                color: Colors.grey[700],
                               ),
                             ),
                           );
