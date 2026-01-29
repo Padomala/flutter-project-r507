@@ -5,10 +5,7 @@ import '../state/caesar_game_notifier.dart';
 class CaesarGameResultScreen extends StatelessWidget {
   final bool finalResult;
 
-  const CaesarGameResultScreen({
-    super.key, 
-    this.finalResult = false,
-  });
+  const CaesarGameResultScreen({super.key, this.finalResult = false});
 
   // quand on passe au round suivant
   void onNextRound(BuildContext context) {
@@ -16,11 +13,17 @@ class CaesarGameResultScreen extends StatelessWidget {
   }
 
   // quand le jeu est fini
-  //NATHAN
   void onFinish(BuildContext context) {
-    //cette partie de la fonction a accès au "DOM" (context)
-    context.read<CaesarGameNotifier>().finishGame();
-    // Navigator.of(context).pop();
+    // 1. On récupère le score final via le provider
+    final notifier = context.read<CaesarGameNotifier>();
+    final score = notifier.state.gameData.score;
+
+    // 2. On prépare le résultat (Format attendu par l'Orchestrator)
+    // On peut renvoyer une Map ou directement un GameResult selon ton implémentation
+    final result = {'score': score, 'game_type': 'caesar'};
+
+    // 3. On quitte l'écran en renvoyant le résultat
+    Navigator.of(context).pop(result);
   }
 
   @override
@@ -41,20 +44,28 @@ class CaesarGameResultScreen extends StatelessWidget {
             children: [
               Text(
                 isFinalResult ? "Jeu fini !" : "MANCHE TERMINÉE",
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 20),
               Text(
-                isFinalResult ? "Score final : $score" : "Score actuel : $score",
+                isFinalResult
+                    ? "Score final : $score"
+                    : "Score actuel : $score",
                 style: const TextStyle(fontSize: 18),
               ),
               const SizedBox(height: 30),
               // Bouton pour passer à la manche suivante ou finir
               ElevatedButton(
-                onPressed: () => isFinalResult ? onFinish(context) : onNextRound(context),
+                onPressed: () =>
+                    isFinalResult ? onFinish(context) : onNextRound(context),
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
                 child: Text(
-                  isFinalResult ? "PASSER AU JEU SUIVANT" : "ÉCHANGER LES RÔLES",
+                  isFinalResult
+                      ? "PASSER AU JEU SUIVANT"
+                      : "ÉCHANGER LES RÔLES",
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,

@@ -8,7 +8,7 @@ class GameSessionService {
   final SupabaseClient _client = Supabase.instance.client;
 
   // Liste des jeux disponibles
-  static const List<String> availableGames = ['clues', 'hot_cold'];
+  static const List<String> availableGames = ['clues', 'hot_cold', 'caesar'];
 
   /// Créer une session de jeu
   Future<GameSession> createSession({

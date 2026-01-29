@@ -165,12 +165,47 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
         return await _launchCluesGame(sessionId);
       case 'hot_cold':
         return await _launchHotColdGame(sessionId);
+      case 'caesar':
+        return await _launchCaesarGame(sessionId);
+
       default:
         return GameResult.draw(
           gameType: gameType,
           playerIds: provider.currentSession!.playerScores.keys.toList(),
         );
     }
+  }
+
+  Future<GameResult?> _launchCaesarGame(String sessionId) async {
+    // On génère un ID unique pour cette instance de jeu
+    final gameId = '${sessionId}_caesar';
+    final provider = context.read<GameSessionProvider>();
+    final playerIds = provider.currentSession!.playerScores.keys.toList();
+
+    // On utilise la route nommée définie dans main.dart
+    final result =
+        await Navigator.pushNamed(
+              context,
+              '/caesar_game',
+              arguments: {'gameId': gameId},
+            )
+            as Map<String, dynamic>?;
+
+    if (result == null) return null;
+
+    final score = result['score'] as int? ?? 0;
+
+    // On construit le GameResult pour mettre à jour la session globale
+    return GameResult(
+      gameType: 'caesar',
+      winnerId:
+          null, // Pas de winner unique en coop, ou à définir selon ta logique
+      scores: {
+        for (var pid in playerIds) pid: score,
+      }, // Tout le monde a le même score en coop ?
+      completedAt: DateTime.now(),
+      additionalData: {'game_finished': true},
+    );
   }
 
   Future<GameResult?> _launchCluesGame(String sessionId) async {

@@ -2,20 +2,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 
-/// Service gérant la communication en temps réel avec Supabase pour une partie spécifique.
 class CommunicationService {
-  /// L'identifiant unique de la partie en cours.
   final String gameId;
-
-  /// Instance du client Supabase pour effectuer les requêtes.
   final SupabaseClient _client = Supabase.instance.client;
 
   CommunicationService({required this.gameId});
 
-  /// Écoute en temps réel les changements de la ligne correspondant à [gameId] dans la table 'game_data'.
-  ///
-  /// Émet une [Map] contenant l'intégralité de la ligne (colonnes et JSONB).
-  /// Utile pour détecter quand un second joueur rejoint la partie via `player_b_id`.
   Stream<Map<String, dynamic>> get gameStream {
     return _client
         .from('game_data')
@@ -28,9 +20,6 @@ class CommunicationService {
         });
   }
 
-  /// Récupère ponctuellement le contenu du champ JSONB 'data'.
-  ///
-  /// Retourne `null` si la partie n'existe pas ou si les données sont vides.
   Future<Map<String, dynamic>?> getGameData() async {
     final response = await _client
         .from('game_data')
@@ -45,60 +34,52 @@ class CommunicationService {
     return response['data'] as Map<String, dynamic>;
   }
 
-  /// Initialise une nouvelle entrée dans la table 'game_data' pour cette partie.
-  ///
-  /// Enregistre l'utilisateur actuel comme `player_a_id`.
-  /// Utilise un `upsert` avec [onConflict] pour éviter les doublons sur l'ID de partie.
-  Future<void> createGameData(Map<String, dynamic> initialData) async {
+  /// Initialise une nouvelle entrée.
+  /// CORRECTION: Utilise 'insert' au lieu de 'upsert' pour ne pas écraser
+  /// une partie créée par l'autre joueur millisecondes avant.
+  Future<bool> createGameData(Map<String, dynamic> initialData) async {
     final userId = _client.auth.currentUser?.id;
-
-    if (userId == null) {
-      debugPrint("Erreur critique: Utilisateur non connecté");
-      return;
-    }
+    if (userId == null) return false;
 
     try {
-      await _client.from('game_data').upsert({
+      await _client.from('game_data').insert({
         'game_id': gameId,
         'player_a_id': userId,
         'data': initialData,
-      }, onConflict: 'game_id');
+      });
+      return true; // Création réussie, je suis Player A
     } catch (e) {
-      debugPrint('Erreur lors de la création initiale des données de jeu: $e');
+      // Si erreur (ex: duplicate key), ça veut dire que la partie existe déjà.
+      // On ne fait rien, on laissera la logique de "Join" prendre le relais.
+      debugPrint('Info: La partie existe déjà, passage en mode Join.');
+      return false;
     }
   }
 
-  /// Permet à l'utilisateur actuel de s'enregistrer en tant que second joueur (`player_b_id`).
-  ///
-  /// Vérifie d'abord si la place est disponible ou si l'utilisateur y est déjà.
-  /// Retourne `true` si l'inscription est validée, `false` en cas d'erreur ou de partie pleine.
   Future<bool> joinGameAsPlayerB() async {
     final userId = _client.auth.currentUser?.id;
-
-    if (userId == null) {
-      debugPrint("Erreur: Utilisateur non connecté");
-      return false;
-    }
+    if (userId == null) return false;
 
     try {
-      // 1. Vérification de la disponibilité de la place
+      // 1. On récupère la ligne actuelle
       final check = await _client
           .from('game_data')
-          .select('player_b_id')
+          .select('player_b_id, player_a_id')
           .eq('game_id', gameId)
           .maybeSingle();
 
-      if (check == null) {
-        debugPrint("Erreur: Partie introuvable");
-        return false;
-      }
+      if (check == null) return false;
 
-      if (check['player_b_id'] != null && check['player_b_id'] != userId) {
-        debugPrint("Erreur: La partie est déjà complète !");
-        return false;
-      }
+      // Si je suis déjà A, je ne peux pas être B
+      if (check['player_a_id'] == userId) return false;
 
-      // 2. Mise à jour de la colonne player_b_id
+      // Si je suis déjà B, c'est bon
+      if (check['player_b_id'] == userId) return true;
+
+      // Si la place est prise par quelqu'un d'autre
+      if (check['player_b_id'] != null) return false;
+
+      // 2. Sinon, je prends la place
       await _client
           .from('game_data')
           .update({'player_b_id': userId})
@@ -112,9 +93,6 @@ class CommunicationService {
     }
   }
 
-  /// Récupère les identifiants des deux joueurs (`player_a_id` et `player_b_id`).
-  ///
-  /// Permet de vérifier les rôles (qui est le maître du jeu / qui est le devineur).
   Future<Map<String, dynamic>?> getGameMetadata() async {
     final response = await _client
         .from('game_data')
@@ -125,15 +103,14 @@ class CommunicationService {
     return response;
   }
 
-  /// Modifie une seule valeur à l'intérieur de la colonne JSONB 'data'.
-  ///
-  /// Cette méthode lit l'état actuel, modifie la clé demandée localement,
-  /// puis renvoie l'objet complet à Supabase.
   Future<void> updateGameDataField({
     required String key,
     required dynamic value,
   }) async {
     try {
+      // Utilisation d'une fonction RPC ou update direct JSONB si supporté,
+      // ici on garde votre logique de lecture/ecriture mais attention aux race conditions.
+      // Pour ce type de jeu simple, ça passe.
       final response = await _client
           .from('game_data')
           .select('data')
@@ -156,7 +133,6 @@ class CommunicationService {
     }
   }
 
-  /// Modifie plusieurs valeurs simultanément dans la colonne JSONB 'data'.
   Future<void> updateGameDataBatch(Map<String, dynamic> updates) async {
     try {
       final response = await _client

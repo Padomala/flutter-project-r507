@@ -84,8 +84,8 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
             .eq('id', currentRoom.id);
 
         final playerIds = roomProvider.participants.map((p) => p.id).toList();
-        final int rawNbGames = currentRoom.settings?['nb_games'] ?? 2;
-        final int nbGames = rawNbGames > 2 ? 2 : rawNbGames;
+        final int rawNbGames = currentRoom.settings?['nb_games'] ?? 3;
+        final int nbGames = rawNbGames > 3 ? 3 : rawNbGames;
 
         await sessionProvider.createSession(
           roomId: currentRoom.id,

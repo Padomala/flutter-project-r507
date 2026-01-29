@@ -57,12 +57,23 @@ class MyApp extends StatelessWidget {
         '/profile': (context) => Profile(),
         '/login': (context) => Login(),
         '/register': (context) => Register(),
-        '/game/caesar_game': (context) => ChangeNotifierProvider(
-          create: (_) => CaesarGameNotifier(
-            gameId: "a1b2c3d4-0000-0000-0000-000000000001",
-          ),
-          child: const CaesarGamePage(),
-        ),
+        // '/game/caesar_game': (context) => ChangeNotifierProvider(
+        //   create: (_) => CaesarGameNotifier(
+        //     gameId: "a1b2c3d4-0000-0000-0000-000000000001",
+        //   ),
+        //   child: const CaesarGamePage(),
+        // ),
+        '/caesar_game': (context) {
+          final args =
+              ModalRoute.of(context)!.settings.arguments
+                  as Map<String, dynamic>?;
+          final gameId =
+              args?['gameId'] ?? 'a1b2c3d3-0000-0000-0000-000000000000';
+          return ChangeNotifierProvider(
+            create: (context) => CaesarGameNotifier(gameId: gameId),
+            child: CaesarGamePage(gameId: gameId),
+          );
+        },
         '/guessing_game': (context) {
           final args =
               ModalRoute.of(context)!.settings.arguments

@@ -12,11 +12,9 @@ class CaesarGameWaitingScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       body: Center(
         child: Column(
-          mainAxisSize: MainAxisSize.min, 
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const CircularProgressIndicator(
-              color: Colors.blue, // You can change this to your AppColors.blue
-            ),
+            const CircularProgressIndicator(color: Colors.blue),
             const SizedBox(height: 30),
             Text(
               message,

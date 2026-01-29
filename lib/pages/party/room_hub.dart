@@ -58,8 +58,8 @@ class _RoomHubState extends State<RoomHub> {
 
       final playerIds = roomProvider.participants.map((p) => p.id).toList();
       final int rawNbGames =
-          roomProvider.currentRoom?.settings?['nb_games'] ?? 2;
-      final int nbGames = rawNbGames > 2 ? 2 : rawNbGames;
+          roomProvider.currentRoom?.settings?['nb_games'] ?? 3;
+      final int nbGames = rawNbGames > 3 ? 3 : rawNbGames;
 
       final sessionId = await sessionProvider.createSession(
         roomId: roomProvider.currentRoom!.id,

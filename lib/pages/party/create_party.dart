@@ -15,7 +15,7 @@ class CreatePartyPage extends StatefulWidget {
 }
 
 class _CreatePartyPageState extends State<CreatePartyPage> {
-  int _nbGames = 2;
+  int _nbGames = 3;
 
   Future<void> _createParty() async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
@@ -101,7 +101,7 @@ class _CreatePartyPageState extends State<CreatePartyPage> {
 
                           AtomNumberPicker(
                             min: 1,
-                            max: 2,
+                            max: 3,
                             initial: _nbGames,
                             width: 290,
                             onChanged: (value) {
