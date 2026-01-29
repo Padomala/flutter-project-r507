@@ -21,10 +21,8 @@ class GameOrchestratorScreen extends StatefulWidget {
 class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
   bool _isInitialized = false;
   int _lastLaunchedIndex = -1;
-  bool _isGameRunning = false;
-
-  // KILL SWITCH : Empêche toute action une fois qu'on quitte
-  bool _isExiting = false;
+  bool _isProcessingGameSequence = false;
+  bool _isExiting = false; // Empêche toute action une fois qu'on quitte
 
   @override
   void initState() {
@@ -36,20 +34,12 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
 
   Future<void> _initSession() async {
     if (_isExiting) return;
-
     final provider = context.read<GameSessionProvider>();
     await provider.loadSession(widget.sessionId);
 
     if (!mounted || _isExiting) return;
-
-    // Abonnement manuel
     provider.addListener(_onSessionUpdated);
-
-    setState(() {
-      _isInitialized = true;
-    });
-
-    // Premier check
+    setState(() => _isInitialized = true);
     _checkAndLaunchGame();
   }
 
@@ -66,26 +56,26 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
   }
 
   void _onSessionUpdated() {
-    // Si on est en train de quitter ou démonté, on ignore tout update
     if (!mounted || _isExiting) return;
     _checkAndLaunchGame();
   }
 
   void _checkAndLaunchGame() async {
-    // Double sécurité
     if (_isExiting) return;
+
+    // Si on est déjà en train de gérer un lancement de jeu, on ignore les updates intermédiaires
+    // (Ex: Update de score d'un joueur pendant la transition)
+    if (_isProcessingGameSequence) return;
 
     final provider = context.read<GameSessionProvider>();
     final session = provider.currentSession;
 
-    // 1. Pas de session chargée
     if (session == null || provider.isLoading) return;
 
-    // 2. Vérification de fin de partie
-    // On vérifie aussi l'index manuellement pour éviter le RangeError plus tard
+    // --- FIN DE SESSION ---
+    // Vérification stricte
     bool isSessionFinished =
-        provider.isCompleted ||
-        !provider.hasMoreGames ||
+        session.status == 'completed' ||
         session.currentGameIndex >= session.gamesQueue.length;
 
     if (isSessionFinished) {
@@ -93,21 +83,32 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
       return;
     }
 
-    // 3. Logique de lancement de jeu
+    // --- LANCEMENT D'UN JEU ---
     final serverIndex = session.currentGameIndex;
 
-    if (serverIndex > _lastLaunchedIndex && !_isGameRunning) {
-      debugPrint('DÉTECTION NOUVEAU JEU: Index $serverIndex');
+    // On ne lance que si c'est un NOUVEAU jeu par rapport à ce qu'on a déjà lancé
+    if (serverIndex > _lastLaunchedIndex) {
+      debugPrint('🚀 DÉMARRAGE SÉQUENCE JEU : Index $serverIndex');
 
-      _lastLaunchedIndex = serverIndex;
-      _isGameRunning = true;
+      setState(() {
+        _isProcessingGameSequence = true; // VERROUILLAGE
+        _lastLaunchedIndex =
+            serverIndex; // On marque comme traité immédiatement
+      });
 
       await _runGameSequence(provider);
 
       if (mounted && !_isExiting) {
         setState(() {
-          _isGameRunning = false;
+          _isProcessingGameSequence = false; // DÉVERROUILLAGE
         });
+
+        // Petit check de sécurité : si l'index a bougé PENDANT qu'on jouait
+        // (cas rare mais possible), on rappelle la fonction.
+        if (provider.currentSession != null &&
+            provider.currentSession!.currentGameIndex > _lastLaunchedIndex) {
+          _checkAndLaunchGame();
+        }
       }
     }
   }
@@ -115,28 +116,18 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
   Future<void> _runGameSequence(GameSessionProvider provider) async {
     if (_isExiting) return;
 
-    // Safety checks avant de lancer
-    if (provider.currentSession == null) return;
-    final idx = provider.currentSession!.currentGameIndex;
-    if (idx >= provider.currentSession!.gamesQueue.length) return;
-
     // 1. Transition
     await _showTransition();
 
-    // --- CORRECTION ICI ---
     if (!mounted || _isExiting) return;
 
-    // IMPORTANT : On doit revérifier si la session est null après le await
-    // car elle a pu être supprimée pendant l'animation de transition.
-    final sessionAfterTransition = provider.currentSession;
-    if (sessionAfterTransition == null) {
-      debugPrint('Session perdue pendant la transition, arrêt séquence.');
-      return;
-    }
+    // Re-vérification de la session après transition
+    final session = provider.currentSession;
+    if (session == null) return;
 
-    // 2. Lancement du jeu (On utilise la variable locale sécurisée)
-    final currentGame = sessionAfterTransition.currentGame;
-    debugPrint('Lancement UI Jeu: ${currentGame.gameType}');
+    // 2. Lancement du jeu
+    final currentGame = session.currentGame;
+    debugPrint('🎮 UI Jeu lancée : ${currentGame.gameType}');
 
     try {
       final result = await _navigateToGame(currentGame.gameType);
@@ -144,21 +135,29 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
       if (!mounted || _isExiting) return;
 
       if (result != null) {
-        debugPrint('Sauvegarde résultat local...');
+        debugPrint('💾 Sauvegarde résultat local...');
+        // On sauvegarde le résultat.
+        // NOTE: Le service gère le passage au jeu suivant (moveToNextGame)
+        // si nous sommes le dernier joueur.
         await provider.saveGameResult(result);
-        debugPrint('Résultat sauvegardé. Attente synchro...');
       } else {
-        debugPrint('Jeu annulé par utilisateur');
+        // Si result est null, c'est que l'utilisateur a fait "Retour" système
+        // ou qu'il y a eu une erreur. On quitte proprement.
+        debugPrint('⚠️ Jeu annulé ou retour utilisateur');
         _exitOrchestrator();
       }
     } catch (e) {
-      debugPrint('Erreur séquence jeu: $e');
+      debugPrint('❌ Erreur critique séquence jeu: $e');
+      // En cas d'erreur, on débloque pour permettre un retry ou une sortie
     }
   }
 
   Future<GameResult?> _navigateToGame(String gameType) async {
     final provider = context.read<GameSessionProvider>();
     final sessionId = provider.currentSession!.id;
+
+    // Important : Si le widget est démonté pendant l'appel, Navigator throw une erreur.
+    // Les blocs try/catch autour de _runGameSequence gèrent ça.
 
     switch (gameType) {
       case 'clues':
@@ -167,8 +166,8 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
         return await _launchHotColdGame(sessionId);
       case 'caesar':
         return await _launchCaesarGame(sessionId);
-
       default:
+        // Fallback pour éviter de bloquer
         return GameResult.draw(
           gameType: gameType,
           playerIds: provider.currentSession!.playerScores.keys.toList(),
@@ -283,9 +282,7 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
     final provider = context.read<GameSessionProvider>();
     final session = provider.currentSession;
 
-    if (session == null ||
-        session.currentGameIndex >= session.gamesQueue.length)
-      return;
+    if (session == null) return;
 
     await Navigator.push(
       context,
@@ -299,22 +296,14 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
     );
   }
 
-  // --- Gestion de Fin de Session (Le coeur du fix) ---
-
   Future<void> _goToFinalResults() async {
-    // 1. Si on est déjà en train de sortir, on ne fait rien (Stop Loop)
     if (_isExiting) return;
-
-    // 2. On active le Kill Switch
     _isExiting = true;
-    debugPrint('Navigation vers résultats finaux)');
-
-    // 3. On se désabonne IMMÉDIATEMENT
     _removeListener();
 
     if (!mounted) return;
 
-    // 4. On utilise pushReplacement pour tuer l'Orchestrator
+    // Utilisation de pushReplacement pour nettoyer l'Orchestrator de la pile
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -324,29 +313,28 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
   }
 
   void _exitOrchestrator() {
+    if (_isExiting) return;
     _isExiting = true;
     _removeListener();
-    Navigator.popUntil(context, (route) => route.isFirst);
+    if (mounted) Navigator.popUntil(context, (route) => route.isFirst);
   }
 
   @override
   Widget build(BuildContext context) {
-    // Si on sort, on affiche un écran vide pour éviter tout crash
-    if (_isExiting) {
-      return const Scaffold(backgroundColor: Color(0xFF1A1A1A));
-    }
-
-    if (!_isInitialized) {
-      return const Scaffold(
-        backgroundColor: Color(0xFF1A1A1A),
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
+    if (_isExiting) return const Scaffold(backgroundColor: Color(0xFF1A1A1A));
 
     final provider = context.watch<GameSessionProvider>();
     final session = provider.currentSession;
+    final hasError = provider.error != null;
 
-    if (provider.error != null) {
+    if (!_isInitialized || (session == null && !hasError)) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF1A1A1A),
+        body: Center(child: CircularProgressIndicator(color: Colors.amber)),
+      );
+    }
+
+    if (hasError) {
       return Scaffold(
         backgroundColor: const Color(0xFF1A1A1A),
         body: Center(
@@ -358,31 +346,39 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
       );
     }
 
-    // Protection Index Overflow
-    if (session == null ||
-        session.currentGameIndex >= session.gamesQueue.length) {
-      return const Scaffold(
-        backgroundColor: Color(0xFF1A1A1A),
-        body: Center(child: CircularProgressIndicator(color: Colors.amber)),
-      );
+    // Protection Index
+    if (session!.currentGameIndex >= session.gamesQueue.length) {
+      return const Scaffold(backgroundColor: Color(0xFF1A1A1A));
     }
 
-    // Affichage "En attente" si on ne joue pas et qu'on n'est pas encore redirigé
-    bool isWaiting =
-        !_isGameRunning && (session.currentGameIndex == _lastLaunchedIndex);
+    // Affichage "En attente"
+    // On affiche cet écran si on a fini notre jeu, qu'on a sauvegardé,
+    // mais que Supabase n'a pas encore envoyé le signal du jeu suivant (index n'a pas bougé).
+    bool isWaitingForOthers =
+        !_isProcessingGameSequence &&
+        (session.currentGameIndex == _lastLaunchedIndex);
 
-    if (isWaiting) {
+    if (isWaitingForOthers) {
       return Scaffold(
         backgroundColor: const Color(0xFF1A1A1A),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: 20),
+              const CircularProgressIndicator(color: Colors.white),
+              const SizedBox(height: 30),
               const Text(
                 'En attente des autres joueurs...',
-                style: TextStyle(color: Colors.white, fontSize: 18),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Jeu ${session.currentGameIndex + 1} terminé',
+                style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
               ),
             ],
           ),
@@ -390,6 +386,7 @@ class _GameOrchestratorScreenState extends State<GameOrchestratorScreen> {
       );
     }
 
+    // Écran noir par défaut pendant les transitions techniques
     return const Scaffold(backgroundColor: Color(0xFF1A1A1A));
   }
 }

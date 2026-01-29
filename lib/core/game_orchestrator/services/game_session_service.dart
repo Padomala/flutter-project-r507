@@ -113,11 +113,24 @@ class GameSessionService {
   }
 
   /// Passer au jeu suivant
-  Future<void> moveToNextGame(String sessionId) async {
+  /// [expectedCurrentIndex] empêche de sauter un jeu si deux joueurs valident en même temps
+  Future<void> moveToNextGame(
+    String sessionId,
+    int expectedCurrentIndex,
+  ) async {
     try {
+      // 1. On récupère la version la plus fraîche
       final current = await getSession(sessionId);
-      final newIndex = current.currentGameIndex + 1;
 
+      //si l'index a déjà bougé, on s'arrête immédiatement.
+      if (current.currentGameIndex != expectedCurrentIndex) {
+        debugPrint(
+          'moveToNextGame ignoré : Index déjà à jour (${current.currentGameIndex})',
+        );
+        return;
+      }
+
+      final newIndex = current.currentGameIndex + 1;
       String newStatus = 'in_progress';
       if (newIndex >= current.totalGames) {
         newStatus = 'completed';
@@ -146,6 +159,7 @@ class GameSessionService {
     required int gameIndex,
   }) async {
     try {
+      // 1. Sauvegarde du résultat
       final enhancedResult = GameResult(
         gameType: result.gameType,
         winnerId: result.winnerId,
@@ -162,6 +176,7 @@ class GameSessionService {
         'additional_data': enhancedResult.additionalData,
       });
 
+      // 2. Mise à jour des scores
       final session = await getSession(sessionId);
       final updatedScores = Map<String, int>.from(session.playerScores);
 
@@ -177,11 +192,9 @@ class GameSessionService {
           })
           .eq('id', sessionId);
 
-      debugPrint(
-        '✅ Résultat enregistré: ${result.gameType} (index: $gameIndex)',
-      );
+      debugPrint('Résultat enregistré: ${result.gameType} (index: $gameIndex)');
 
-      // Vérification barrière synchrone
+      // 3. BARRIÈRE SYNCHRONE
       final allResults = await _client
           .from('game_results')
           .select()
@@ -193,11 +206,12 @@ class GameSessionService {
       }).toList();
 
       debugPrint(
-        'Résultats reçus pour jeu $gameIndex: ${currentLevelResults.length}/${session.playerScores.length}',
+        'Joueurs ayant fini: ${currentLevelResults.length}/${session.playerScores.length}',
       );
 
       if (currentLevelResults.length >= session.playerScores.length) {
-        await moveToNextGame(sessionId);
+        // On passe l'index actuel pour que moveToNextGame puisse vérifier
+        await moveToNextGame(sessionId, gameIndex);
       } else {
         debugPrint('Attente des autres joueurs...');
       }
@@ -225,22 +239,18 @@ class GameSessionService {
     }
   }
 
-  /// Stream pour suivre les changements de session en temps réel
-  /// Retourne null si la session n'existe plus ou est vide
+  /// Stream pour suivre les changements
   Stream<GameSession?> watchSession(String sessionId) {
     return _client
         .from('game_sessions')
         .stream(primaryKey: ['id'])
         .eq('id', sessionId)
         .map((data) {
-          if (data.isEmpty) {
-            return null; // Gestion propre de la fin de session
-          }
+          if (data.isEmpty) return null;
           return GameSession.fromJson(data.first);
         });
   }
 
-  /// Supprimer une session (nettoyage)
   Future<void> deleteSession(String sessionId) async {
     try {
       await _client.from('game_sessions').delete().eq('id', sessionId);

@@ -10,7 +10,7 @@ class GameSessionProvider extends ChangeNotifier {
   GameSession? _currentSession;
   bool _isLoading = false;
   String? _error;
-  StreamSubscription<GameSession?>? _sessionSubscription; // Type nullable
+  StreamSubscription<GameSession?>? _sessionSubscription;
 
   // Getters
   GameSession? get currentSession => _currentSession;
@@ -90,7 +90,10 @@ class GameSessionProvider extends ChangeNotifier {
   Future<bool> moveToNextGame() async {
     if (_currentSession == null) return false;
     try {
-      await _service.moveToNextGame(_currentSession!.id);
+      await _service.moveToNextGame(
+        _currentSession!.id,
+        _currentSession!.currentGameIndex,
+      );
       return true;
     } catch (e) {
       _setError('Erreur passage au jeu suivant: $e');
