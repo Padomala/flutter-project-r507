@@ -11,6 +11,8 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double cardSpacing = 20.0;
+    final userProvider = context.watch<UserProvider>();
+    final user = userProvider.user;
 
     return Scaffold(
       body: Stack(
@@ -20,7 +22,7 @@ class HomePage extends StatelessWidget {
           ),
           Positioned.fill(
             child: Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [Colors.black54, Colors.transparent],
                   begin: Alignment.bottomCenter,
@@ -38,17 +40,39 @@ class HomePage extends StatelessWidget {
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
-
                 children: [
-                  Spacer(),
-                  AtomTitle(text: "SPLIT"),
-                  SizedBox(height: 16),
+                  const Spacer(),
+                  const AtomTitle(text: "SPLIT"),
+
+                  if (userProvider.isConnected) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black45,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white24),
+                      ),
+                      child: Text(
+                        "Bonjour, ${user.name}",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 16),
                   Column(
                     children: [
                       AtomButton(
                         label: 'CRÉER UNE PARTIE',
                         onPressed: () {
-                          final userProvider = context.read<UserProvider>();
                           if (userProvider.isConnected) {
                             Navigator.pushNamed(context, '/create_party');
                           } else {
@@ -63,7 +87,6 @@ class HomePage extends StatelessWidget {
                       AtomButton(
                         label: 'REJOINDRE UNE PARTIE',
                         onPressed: () {
-                          final userProvider = context.read<UserProvider>();
                           if (userProvider.isConnected) {
                             Navigator.pushNamed(context, '/join_party');
                           } else {
@@ -76,8 +99,8 @@ class HomePage extends StatelessWidget {
                       ),
                     ],
                   ),
-                  SizedBox(height: 56),
-                  Spacer(),
+                  const SizedBox(height: 56),
+                  const Spacer(),
                 ],
               ),
             ),

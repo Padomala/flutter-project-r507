@@ -7,6 +7,9 @@ class BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = context.watch<UserProvider>();
+    final user = userProvider.user;
+
     return Positioned(
       left: 0,
       right: 0,
@@ -22,28 +25,43 @@ class BottomNavBar extends StatelessWidget {
           children: [
             IconButton(
               onPressed: () {
-                final userProvider = context.read<UserProvider>();
                 if (userProvider.isConnected) {
                   Navigator.pushNamed(context, '/profile');
                 } else {
                   Navigator.pushNamed(context, '/register');
                 }
               },
-              icon: Icon(Icons.person, color: Colors.white, size: 28),
+              // Si connecté et avatar présent -> Photo, Sinon -> Icone
+              icon:
+                  (userProvider.isConnected &&
+                      user.avatarUrl != null &&
+                      user.avatarUrl!.isNotEmpty)
+                  ? CircleAvatar(
+                      radius: 16,
+                      backgroundColor: Colors.white,
+                      backgroundImage: NetworkImage(user.avatarUrl!),
+                      onBackgroundImageError: (_, __) {
+                        debugPrint("Erreur chargement avatar");
+                      },
+                    )
+                  : const Icon(Icons.person, color: Colors.white, size: 28),
               tooltip: 'Profil',
             ),
+
             IconButton(
               onPressed: () {
-                Navigator.pushNamed(context, '/home');
+                if (ModalRoute.of(context)?.settings.name != '/home') {
+                  Navigator.pushNamed(context, '/home');
+                }
               },
-              icon: Icon(Icons.home, color: Colors.white, size: 28),
+              icon: const Icon(Icons.home, color: Colors.white, size: 28),
               tooltip: 'Accueil',
             ),
             IconButton(
               onPressed: () {
                 Navigator.pushNamed(context, '/shop');
               },
-              icon: Icon(Icons.store, color: Colors.white, size: 28),
+              icon: const Icon(Icons.store, color: Colors.white, size: 28),
               tooltip: 'Shop',
             ),
           ],
