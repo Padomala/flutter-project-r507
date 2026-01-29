@@ -99,7 +99,7 @@ class _RegisterPageState extends State<Register> {
           builder: (ctx) => AlertDialog(
             title: const Text("Inscription réussie"),
             content: const Text(
-              "Votre compte a été créé avec succès !\n\nUn email de confirmation vous a été envoyé. Veuillez cliquer sur le lien reçu pour activer votre compte.",
+              "Votre compte a été créé avec succès !\n\nUn email de confirmation vous a été envoyé. Veuillez cliquer sur le lien reçu pour activer votre compte.\n\nVérifier vos spams si vous ne recevez pas l'email.",
             ),
             actions: [
               TextButton(
