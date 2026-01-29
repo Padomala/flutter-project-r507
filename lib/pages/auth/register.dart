@@ -22,9 +22,20 @@ class _RegisterPageState extends State<Register> {
 
   bool _isLoading = false;
 
+  // on déclare une variable pour stocker le Messenger
+  late ScaffoldMessengerState _scaffoldMessenger;
+
+  // on capture le Messenger tant que le context est valide
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _scaffoldMessenger = ScaffoldMessenger.of(context);
+  }
+
   @override
   void dispose() {
-    ScaffoldMessenger.of(context).clearSnackBars();
+    // on utilise la référence stockée
+    _scaffoldMessenger.clearSnackBars();
 
     _emailController.dispose();
     _pseudoController.dispose();

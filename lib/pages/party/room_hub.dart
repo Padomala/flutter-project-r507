@@ -339,14 +339,14 @@ class _RoomHubState extends State<RoomHub> {
                         bgColor: const Color.fromARGB(255, 18, 184, 10),
                       )
                     else if (amIHost)
-                      _WaitingMessage(
-                        text: "En attente de l'ami...",
-                        color: Colors.yellow,
+                      const _WaitingMessage(
+                        text: "En attente d'un adversaire...",
+                        color: Colors.orangeAccent,
                       )
                     else
-                      _WaitingMessage(
-                        text: "En attente du Host pour lancer la partie...",
-                        color: Colors.grey,
+                      const _WaitingMessage(
+                        text: "En attente du chef de salle...",
+                        color: Colors.blueAccent,
                       ),
                   ],
                 ),
@@ -362,29 +362,44 @@ class _RoomHubState extends State<RoomHub> {
 class _WaitingMessage extends StatelessWidget {
   final String text;
   final Color color;
+
   const _WaitingMessage({required this.text, required this.color});
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
-      constraints: const BoxConstraints(maxWidth: 300),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      constraints: const BoxConstraints(maxWidth: 320),
       decoration: BoxDecoration(
-        color: AppColors.gray,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.gray),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color, width: 3),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.access_time, color: AppColors.gray),
-          const SizedBox(width: 8),
+          SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 3, color: color),
+          ),
+          const SizedBox(width: 16),
           Flexible(
             child: Text(
               text,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: AppColors.gray,
+                color: Colors.black87,
                 fontWeight: FontWeight.bold,
+                fontSize: 16,
               ),
             ),
           ),
