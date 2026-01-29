@@ -64,10 +64,14 @@ class _SettingsPopupState extends State<SettingsPopup> {
                               labelOff: "Activer les vibrations",
                               value: vibration.isVibrationOn,
                               onPressed: () async {
-                                vibration.toggleVibration(
-                                  !vibration.isVibrationOn,
-                                );
-                                await vibration.vibrate();
+                                bool newValue = !vibration.isVibrationOn;
+
+                                vibration.toggleVibration(newValue);
+
+                                // vibre si on active la vibration
+                                if (newValue) {
+                                  await vibration.vibrate(duration: 50);
+                                }
                               },
                             );
                           },

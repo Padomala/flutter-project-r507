@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import '../../../app_colors.dart';
 import '../../../widget/atoms/atom_background_page.dart';
+import '../../../store/provider/vibration_provider.dart';
+import 'package:provider/provider.dart';
 
 class TransitionScreen extends StatefulWidget {
   final int gameNumber;
@@ -44,6 +46,8 @@ class _TransitionScreenState extends State<TransitionScreen>
   }
 
   void _startCountdown() {
+    context.read<VibrationProvider>().vibrate(duration: 50);
+
     _animationController.forward();
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -51,14 +55,15 @@ class _TransitionScreenState extends State<TransitionScreen>
         setState(() {
           _countdown--;
         });
+
+        context.read<VibrationProvider>().vibrate(duration: 50);
+
         _animationController.reset();
         _animationController.forward();
       } else {
         timer.cancel();
-        // Capture navigator before async gap
-        final navigator = Navigator.of(context);
 
-        // Attendre un peu avant de fermer l'écran
+        final navigator = Navigator.of(context);
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted) {
             navigator.pop();
