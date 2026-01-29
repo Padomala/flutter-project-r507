@@ -45,11 +45,12 @@ class CommunicationService {
   ///
   /// this part choose who is the player a vs b `player_a_id`.
   /// Commentaire de quentin -> Utilise un `upsert` avec [onConflict] pour éviter les doublons sur l'ID de partie.
-  Future<void> createGameData(Map<String, dynamic> initialData) async {
+  Future<bool> createGameData(Map<String, dynamic> initialData) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return false;
 
     try {
+      // CORRECTION ICI : On utilise insert pour ne pas écraser si ça existe déjà
       await _client.from('game_data').insert({
         'game_id': gameId,
         'player_a_id': userId,

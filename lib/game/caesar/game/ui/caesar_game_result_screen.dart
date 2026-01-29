@@ -7,27 +7,28 @@ class CaesarGameResultScreen extends StatelessWidget {
 
   const CaesarGameResultScreen({super.key, this.finalResult = false});
 
+  // Quand on passe au round suivant (interne au mini-jeu)
   void onNextRound(BuildContext context) {
     context.read<CaesarGameNotifier>().nextRound();
   }
 
-  // quand le jeu est fini
+  // Quand le jeu est fini pour de bon
   void onFinish(BuildContext context) {
     // 1. On récupère le score final via le provider
     final notifier = context.read<CaesarGameNotifier>();
     final score = notifier.state.gameData.score;
 
     // 2. On prépare le résultat (Format attendu par l'Orchestrator)
-    // On peut renvoyer une Map ou directement un GameResult selon ton implémentation
     final result = {'score': score, 'game_type': 'caesar'};
 
-    // 3. On quitte l'écran en renvoyant le résultat
+    // 3. IMPORTANT : On renvoie ce résultat à l'orchestrator
+    // Sans ça, l'orchestrator croit qu'on a annulé et quitte la partie.
     Navigator.of(context).pop(result);
   }
 
   @override
   Widget build(BuildContext context) {
-    // we get the state to show the correct score
+    // On récupère l'état pour afficher le score
     final gameState = context.watch<CaesarGameNotifier>().state;
     final score = gameState.gameData.score;
     final bool isFinalResult = finalResult;
@@ -56,6 +57,7 @@ class CaesarGameResultScreen extends StatelessWidget {
                 style: const TextStyle(fontSize: 18),
               ),
               const SizedBox(height: 30),
+
               ElevatedButton(
                 onPressed: () =>
                     isFinalResult ? onFinish(context) : onNextRound(context),

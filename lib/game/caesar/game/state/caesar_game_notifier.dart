@@ -1,3 +1,4 @@
+import 'dart:async'; // Nécessaire pour StreamSubscription
 import 'package:flutter/material.dart';
 import 'package:game_v1/game/caesar/core/constants.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -9,7 +10,10 @@ import '../../data/models/game_data_model.dart';
 class CaesarGameNotifier extends ChangeNotifier {
   final String gameId;
   final CommunicationService _commService;
-  // ignore: unused_field
+
+  // --- AJOUT : Variable pour stocker l'abonnement ---
+  StreamSubscription? _gameSubscription;
+
   PlayerId _localPlayerId = PlayerId.playerA;
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -29,23 +33,31 @@ class CaesarGameNotifier extends ChangeNotifier {
     _initializeGame();
   }
 
-  /// we set the code in loading state, with a circle in the middle
-  void _setLoading(bool loading) {
-    if (_isLoading == loading) return;
-    _isLoading = loading;
-    notifyListeners();
+  // --- AJOUT : Nettoyage propre quand l'écran est détruit ---
+  @override
+  void dispose() {
+    _gameSubscription?.cancel(); // On coupe l'écoute de Supabase
+    super.dispose();
   }
 
-  /// HERE, we determine wich state of the game to show
+  void _setLoading(bool loading) {
+    // Sécurité : Si le notifier est déjà "dispose", on ne fait rien
+    // (Même si dispose() est appelé, parfois des callbacks async traînent encore)
+    try {
+      if (_isLoading == loading) return;
+      _isLoading = loading;
+      notifyListeners();
+    } catch (_) {
+      // Ignore error if disposed
+    }
+  }
+
   GameStateEnum _determineState(String? playerBId, bool isGameOver) {
     if (isGameOver) return GameStateEnum.results;
     if (playerBId == null) return GameStateEnum.waiting;
     return GameStateEnum.playerATurn;
   }
 
-  /// Submit an attempt with a playerInput and a expected solution
-  /// manage the verification, and the change in DB
-  /// Return true if it's the worrect answer, false if not
   Future<bool> submitAttempt(
     String playerInput,
     String expectedSolution,
@@ -72,17 +84,11 @@ class CaesarGameNotifier extends ChangeNotifier {
     }
   }
 
-  /// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
-  /// ▒▒▒       fonctions de gameplays       ▒▒▒
-  /// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
-
-  /// Launch when we need to go to the result page, we update the db and return if gameOver (not used)
   Future<({bool gameOver})> goToResult() async {
     if (_isLoading) return (gameOver: false);
     _setLoading(true);
 
     try {
-      // if we are at the last round, we chaneg not only roundOver but also gameOver
       final bool isFinal = _state.gameRound >= kMaxRounds;
 
       await _commService.updateGameDataBatch({
@@ -101,7 +107,6 @@ class CaesarGameNotifier extends ChangeNotifier {
     }
   }
 
-  /// update all the data related stuff to inform the other page to go to the next gamepage after result
   Future<void> nextRound() async {
     if (_isLoading) return;
     _setLoading(true);
@@ -120,13 +125,10 @@ class CaesarGameNotifier extends ChangeNotifier {
     }
   }
 
-  /// Function run when we finish the current game, ready to change to a new game
   Future<void> finishGame() async {
-    // here we have access to the score
-    // int scoreActuel = _state.gameData.score;
+    // Logique de fin si nécessaire
   }
 
-  /// ACTION : Send score to supabase
   Future<void> submitScore(int newScore, {bool finishGame = false}) async {
     try {
       Map<String, dynamic> updates = {
@@ -139,29 +141,21 @@ class CaesarGameNotifier extends ChangeNotifier {
     }
   }
 
-  /// Initialize the game
   void _initializeGame() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return;
 
-    // 1. On essaie de récupérer la partie
     var gameMetadata = await _commService.getGameMetadata();
 
-    // we create the party if it doesnt exist for now, if it exist, we join it
     if (gameMetadata == null) {
       final created = await _createInitialGameData();
       if (created) {
-        // J'ai créé la partie, je suis A
         _localPlayerId = PlayerId.playerA;
       } else {
-        // La création a échoué (donc elle existe), je récupère les métadonnées
-        // Cela arrive si l'autre joueur a créé la partie 10ms avant moi
         gameMetadata = await _commService.getGameMetadata();
       }
     }
 
-    // 3. Attribution du rôle
-    // Si gameMetadata est toujours null ici, c'est un problème réseau grave
     if (gameMetadata != null) {
       final playerA = gameMetadata['player_a_id'];
       final playerB = gameMetadata['player_b_id'];
@@ -171,25 +165,16 @@ class CaesarGameNotifier extends ChangeNotifier {
       } else if (user.id == playerB) {
         _localPlayerId = PlayerId.playerB;
       } else {
-        // Je ne suis ni A ni B, et B est vide -> Je rejoins
         final success = await _commService.joinGameAsPlayerB();
         if (success) {
           _localPlayerId = PlayerId.playerB;
         } else {
-          // Si échec (ex: partie pleine), on force B localement pour pas casser l'UI
-          // Mais idéalement il faudrait gérer un état "Spectateur" ou "Erreur"
           _localPlayerId = PlayerId.playerB;
         }
       }
-    } else if (_localPlayerId == PlayerId.playerA) {
-      // Cas où on vient de créer (created == true plus haut)
     }
 
-    // Mise à jour de l'état initial
     final playerBFromMeta = gameMetadata?['player_b_id'] as String?;
-
-    // Si je viens de rejoindre, playerBFromMeta est peut-être encore null dans 'gameMetadata'
-    // mais _localPlayerId est correct.
     String? effectivePlayerB = playerBFromMeta;
     if (_localPlayerId == PlayerId.playerB) {
       effectivePlayerB = user.id;
@@ -201,8 +186,8 @@ class CaesarGameNotifier extends ChangeNotifier {
     );
     notifyListeners();
 
-    //we put a  listener that update the data to change the data dynamically (especially the gameState)
-    _commService.gameStream.listen((row) {
+    // --- CORRECTION : On stocke l'abonnement ici ---
+    _gameSubscription = _commService.gameStream.listen((row) {
       if (row.isEmpty) return;
 
       final jsonData = row['data'] as Map<String, dynamic>? ?? {};
@@ -210,17 +195,22 @@ class CaesarGameNotifier extends ChangeNotifier {
 
       final bool dbGameOver = jsonData['game_over'] ?? false;
       final bool dbRoundOver = jsonData['isRoundOver'] ?? false;
-      final int dbRound = jsonData['round'] ?? 0; // Défaut 0 au lieu de 1
+      final int dbRound = jsonData['round'] ?? 0;
       final int dbScore = jsonData['score'] ?? 0;
 
-      _state = _state.copyWith(
-        isGameOver: dbGameOver,
-        isRoundOver: dbRoundOver,
-        gameRound: dbRound,
-        gameData: _state.gameData.copyWith(score: dbScore),
-        currentState: _determineState(playerBId, dbGameOver),
-      );
-      notifyListeners();
+      // Sécurité : Si le stream envoie des données mais qu'on a fermé l'écran entre temps
+      try {
+        _state = _state.copyWith(
+          isGameOver: dbGameOver,
+          isRoundOver: dbRoundOver,
+          gameRound: dbRound,
+          gameData: _state.gameData.copyWith(score: dbScore),
+          currentState: _determineState(playerBId, dbGameOver),
+        );
+        notifyListeners();
+      } catch (_) {
+        // Le notifier a été disposé, on ignore
+      }
     });
   }
 

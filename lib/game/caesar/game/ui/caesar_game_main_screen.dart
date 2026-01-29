@@ -28,10 +28,6 @@ class _CaesarGamePageState extends State<CaesarGamePage> {
     );
 
     // 2. LOGIQUE DE RÔLE
-    final bool isLocalPlayerInputer =
-        (gameState.localPlayerId == PlayerId.playerA)
-        ? gameState.gameRound % 2 != 0
-        : gameState.gameRound % 2 == 0;
     // here we set the correct screen for the round
     final bool isLocalPlayerInputer =
         (gameState.localPlayerId == PlayerId.playerA)
