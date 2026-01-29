@@ -19,18 +19,20 @@ class CaesarGamePage extends StatefulWidget {
 }
 
 class _CaesarGamePageState extends State<CaesarGamePage> {
-  // Suppression de la variable 'showInputer' car on utilise maintenant le 'gameState'
-
   @override
   Widget build(BuildContext context) {
-    // 1. RÉCUPÉRATION DES DONNÉES (Le Notifier que nous avons créé)
-    // On utilise gameState pour ne pas confondre avec le State du widget
+    // We get the Notifier
     final gameState = context.watch<CaesarGameNotifier>().state;
     final isLoading = context.select<CaesarGameNotifier, bool>(
       (n) => n.isLoading,
     );
 
     // 2. LOGIQUE DE RÔLE
+    final bool isLocalPlayerInputer =
+        (gameState.localPlayerId == PlayerId.playerA)
+        ? gameState.gameRound % 2 != 0
+        : gameState.gameRound % 2 == 0;
+    // here we set the correct screen for the round
     final bool isLocalPlayerInputer =
         (gameState.localPlayerId == PlayerId.playerA)
         ? gameState.gameRound % 2 != 0
@@ -75,7 +77,7 @@ class _CaesarGamePageState extends State<CaesarGamePage> {
     );
   }
 
-  /// Méthode qui affiche le bon écran selon l'état de jeu
+  /// Functuion that show the correct screen for each gameState
   Widget _buildGameContent(CaesarGameState state, bool isInputer) {
     if (state.isGameOver) {
       return const CaesarGameResultScreen(finalResult: true);

@@ -60,7 +60,7 @@ const List<Map<String, String>> kCaesarQuestions = [
     "answerWord": "brasilia"
   },
 
-  // Prénoms d'acteurs/actrices
+  // Prénoms d'acteur(rices)
   {
     "question": "Donne le prénom de cet(te) acteur(ice) connu.",
     "questionWord": "hanks",
@@ -144,7 +144,7 @@ const List<Map<String, String>> kCaesarQuestions = [
     "answerWord": "grenouille"
   },
 
-  // Contraires
+  // contraires
   {
     "question": "Quelle est le contraire de ce mot ?",
     "questionWord": "nord",

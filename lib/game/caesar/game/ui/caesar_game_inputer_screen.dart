@@ -18,8 +18,6 @@ class _CaesarGamePageInputerState extends State<CaesarGamePageInputer> {
   final _controller = TextEditingController();
   final _txtController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-
-  // we choose the question randomly here
   late final int _questionIndex;
   late final Map<String, String> _question;
 
@@ -28,7 +26,7 @@ class _CaesarGamePageInputerState extends State<CaesarGamePageInputer> {
     super.initState();
 
     if (kCaesarQuestions.isNotEmpty) {
-      // Pick a truly random question index each time
+      // Pick a random question index each time
       final random = Random();
       _questionIndex = (kCaesarQuestions.length == 1)
           ? 0
@@ -60,7 +58,6 @@ class _CaesarGamePageInputerState extends State<CaesarGamePageInputer> {
     if (correctResponse) {
       //CORRECT
       showNotification('Bonne réponse !', color: Colors.greenAccent);
-
     } else {
       //INCORRECT
       showNotification('Mauvaise réponse !');
@@ -74,9 +71,7 @@ class _CaesarGamePageInputerState extends State<CaesarGamePageInputer> {
 
   /// Show a notification
   void showNotification(String message, {Color? color}) {
-    // Remove current SnackBar to avoid stacking on multiple clicks
     ScaffoldMessenger.of(context).removeCurrentSnackBar();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -94,7 +89,7 @@ class _CaesarGamePageInputerState extends State<CaesarGamePageInputer> {
   }
 
 
-  // Function to choose a question by a specified index from kCaesarQuestions
+  /// Function to choose a question by a specified index from kCaesarQuestions
   Map<String, String> getQuestionByIndex(int index) {
     final questions = kCaesarQuestions;
     if (questions.isEmpty || index < 0 || index >= questions.length) return {};
@@ -112,11 +107,8 @@ class _CaesarGamePageInputerState extends State<CaesarGamePageInputer> {
         child: Form(
           key: _formKey,
           child: Column(
-            // Forces the column to use all available height 
-            // so spacers can actually expand.
             mainAxisAlignment: MainAxisAlignment.spaceBetween, 
             children: [
-              // Header Section
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 8.0),
                 child: Container(
@@ -147,7 +139,6 @@ class _CaesarGamePageInputerState extends State<CaesarGamePageInputer> {
                 ),
               ),
 
-              // FLEX SPACE 1: Pushes the header and the question box apart
               const Spacer(flex: 1),
 
               // Question Card Section
@@ -192,11 +183,9 @@ class _CaesarGamePageInputerState extends State<CaesarGamePageInputer> {
                 ),
               ),
 
-              // FLEX SPACE 2: This is the "Main" gap that pushes the input to the bottom.
-              // Increasing the flex value makes this gap larger relative to others.
               const Spacer(flex: 2),
 
-              // Input Footer Section
+              // Input "Footer" Section
               Align(
                 alignment: Alignment.centerLeft,
                 child: Padding(
@@ -241,7 +230,7 @@ class _CaesarGamePageInputerState extends State<CaesarGamePageInputer> {
                 ),
               ),
 
-              const SizedBox(height: 16), // Small fixed gap between input and button
+              const SizedBox(height: 16),
 
               SizedBox(
                 width: double.infinity,
@@ -263,8 +252,6 @@ class _CaesarGamePageInputerState extends State<CaesarGamePageInputer> {
                   ),
                 ),
               ),
-              
-              // Small padding at the very bottom to prevent the button from touching the edge
               const SizedBox(height: 16), 
             ],
           ),

@@ -29,18 +29,23 @@ class CaesarGameNotifier extends ChangeNotifier {
     _initializeGame();
   }
 
+  /// we set the code in loading state, with a circle in the middle
   void _setLoading(bool loading) {
     if (_isLoading == loading) return;
     _isLoading = loading;
     notifyListeners();
   }
 
+  /// HERE, we determine wich state of the game to show
   GameStateEnum _determineState(String? playerBId, bool isGameOver) {
     if (isGameOver) return GameStateEnum.results;
     if (playerBId == null) return GameStateEnum.waiting;
     return GameStateEnum.playerATurn;
   }
 
+  /// Submit an attempt with a playerInput and a expected solution
+  /// manage the verification, and the change in DB
+  /// Return true if it's the worrect answer, false if not
   Future<bool> submitAttempt(
     String playerInput,
     String expectedSolution,
@@ -67,12 +72,17 @@ class CaesarGameNotifier extends ChangeNotifier {
     }
   }
 
+  /// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+  /// ▒▒▒       fonctions de gameplays       ▒▒▒
+  /// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+
+  /// Launch when we need to go to the result page, we update the db and return if gameOver (not used)
   Future<({bool gameOver})> goToResult() async {
     if (_isLoading) return (gameOver: false);
     _setLoading(true);
 
     try {
-      // Si round >= maxRounds, c'est fini
+      // if we are at the last round, we chaneg not only roundOver but also gameOver
       final bool isFinal = _state.gameRound >= kMaxRounds;
 
       await _commService.updateGameDataBatch({
@@ -91,6 +101,7 @@ class CaesarGameNotifier extends ChangeNotifier {
     }
   }
 
+  /// update all the data related stuff to inform the other page to go to the next gamepage after result
   Future<void> nextRound() async {
     if (_isLoading) return;
     _setLoading(true);
@@ -109,6 +120,13 @@ class CaesarGameNotifier extends ChangeNotifier {
     }
   }
 
+  /// Function run when we finish the current game, ready to change to a new game
+  Future<void> finishGame() async {
+    // here we have access to the score
+    // int scoreActuel = _state.gameData.score;
+  }
+
+  /// ACTION : Send score to supabase
   Future<void> submitScore(int newScore, {bool finishGame = false}) async {
     try {
       Map<String, dynamic> updates = {
@@ -121,7 +139,7 @@ class CaesarGameNotifier extends ChangeNotifier {
     }
   }
 
-  /// CORRECTION MAJEURE ICI
+  /// Initialize the game
   void _initializeGame() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return;
@@ -129,7 +147,7 @@ class CaesarGameNotifier extends ChangeNotifier {
     // 1. On essaie de récupérer la partie
     var gameMetadata = await _commService.getGameMetadata();
 
-    // 2. Si elle n'existe pas, on tente de la créer (insert)
+    // we create the party if it doesnt exist for now, if it exist, we join it
     if (gameMetadata == null) {
       final created = await _createInitialGameData();
       if (created) {
@@ -183,7 +201,7 @@ class CaesarGameNotifier extends ChangeNotifier {
     );
     notifyListeners();
 
-    // Écoute temps réel
+    //we put a  listener that update the data to change the data dynamically (especially the gameState)
     _commService.gameStream.listen((row) {
       if (row.isEmpty) return;
 
