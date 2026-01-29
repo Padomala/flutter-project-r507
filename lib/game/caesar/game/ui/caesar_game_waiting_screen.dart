@@ -5,7 +5,6 @@ class CaesarGameWaitingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Defining the message locally within the build method
     const String message = "En attente du second joueur...";
 
     return Scaffold(
@@ -15,7 +14,7 @@ class CaesarGameWaitingScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min, 
           children: [
             const CircularProgressIndicator(
-              color: Colors.blue, // You can change this to your AppColors.blue
+              color: Colors.blue,
             ),
             const SizedBox(height: 30),
             Text(

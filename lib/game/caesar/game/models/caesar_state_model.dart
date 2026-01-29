@@ -18,7 +18,7 @@ class CaesarGameState {
   // If the round isOver (for the transition screen with result)
   final bool isRoundOver;
 
-  /// the current round from 0 to -1 the max in the constants
+  /// the current round from 1 to the max in the constants (2 normally)
   final int gameRound;
 
   CaesarGameState({

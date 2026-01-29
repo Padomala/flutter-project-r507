@@ -10,22 +10,18 @@ class CaesarGameResultScreen extends StatelessWidget {
     this.finalResult = false,
   });
 
-  // quand on passe au round suivant
   void onNextRound(BuildContext context) {
     context.read<CaesarGameNotifier>().nextRound();
   }
 
-  // quand le jeu est fini
-  //NATHAN
   void onFinish(BuildContext context) {
-    //cette partie de la fonction a accès au "DOM" (context)
     context.read<CaesarGameNotifier>().finishGame();
     // Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
-    // On récupère l'état pour afficher le score final
+    // we get the state to show the correct score
     final gameState = context.watch<CaesarGameNotifier>().state;
     final score = gameState.gameData.score;
     final bool isFinalResult = finalResult;
@@ -49,7 +45,6 @@ class CaesarGameResultScreen extends StatelessWidget {
                 style: const TextStyle(fontSize: 18),
               ),
               const SizedBox(height: 30),
-              // Bouton pour passer à la manche suivante ou finir
               ElevatedButton(
                 onPressed: () => isFinalResult ? onFinish(context) : onNextRound(context),
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),

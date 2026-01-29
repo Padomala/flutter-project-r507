@@ -29,22 +29,23 @@ class CaesarGameNotifier extends ChangeNotifier {
     _initializeGame();
   }
 
-  /// Centralisation de la notification UI
+  /// we set the code in loading state, with a circle in the middle
   void _setLoading(bool loading) {
     if (_isLoading == loading) return;
     _isLoading = loading;
     notifyListeners();
   }
 
-  /// Logique de détermination de l'état (La machine à états)
+  /// HERE, we determine wich state of the game to show
   GameStateEnum _determineState(String? playerBId, bool isGameOver) {
     if (isGameOver) return GameStateEnum.results;
     if (playerBId == null) return GameStateEnum.waiting;
-    // On peut imaginer ici une logique de tour par tour plus complexe
     return GameStateEnum.playerATurn; 
   }
 
-  /// Valider la réponse, on teste si la prop est bonne et si on ajoute le score dcp
+  /// Submit an attempt with a playerInput and a expected solution
+  /// manage the verification, and the change in DB
+  /// Return true if it's the worrect answer, false if not
   Future<bool> submitAttempt(String playerInput, String expectedSolution) async {
     if (_isLoading || _state.isGameOver) return false;
     
@@ -54,7 +55,7 @@ class CaesarGameNotifier extends ChangeNotifier {
       String exceptedSolutionFormated = enleverAccents(expectedSolution.trim().toLowerCase());
       if (playerInputFormated == exceptedSolutionFormated) {
         // CORRECT
-        final newScore = _state.gameData.score + 10;
+        final newScore = _state.gameData.score + kCaesarPointPerGoodAnswer;
         await submitScore(newScore);
         return true;
       } else {
@@ -66,21 +67,23 @@ class CaesarGameNotifier extends ChangeNotifier {
     }
   }
 
-  // ---------- fonctions de gameplays ------------
-  /// Met à jour les données pour afficher l'écran de résultat.
-  /// la fonction retourne un objet indiquant si le jeu est définitivement terminé.
+  /// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+  /// ▒▒▒       fonctions de gameplays       ▒▒▒
+  /// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+
+
+  /// Launch when we need to go to the result page, we update the db and return if gameOver (not used)
   Future<({bool gameOver})> goToResult() async {
     if (_isLoading) return (gameOver: false);
     _setLoading(true);
 
     try {
-      // CONDITION CORRIGÉE : 
-      // Si on vient de finir le round 2, alors isFinal devient TRUE
+      // if we are at the last round, we chaneg not only roundOver but also gameOver
       final bool isFinal = _state.gameRound >= kMaxRounds;
 
       await _commService.updateGameDataBatch({
         'isRoundOver': true,
-        'game_over': isFinal, // C'est ici que Supabase recevra enfin "true"
+        'game_over': isFinal,
       });
 
       _state = _state.copyWith(
@@ -97,7 +100,7 @@ class CaesarGameNotifier extends ChangeNotifier {
     }
   }
 
-  /// update all the data related stuff to inform the other page to go to the next gamepage
+  /// update all the data related stuff to inform the other page to go to the next gamepage after result
   Future<void> nextRound() async {
     if (_isLoading) return;
     _setLoading(true);
@@ -116,15 +119,15 @@ class CaesarGameNotifier extends ChangeNotifier {
     }
   }
 
-  //NATHAN
+  /// Function run when we finish the current game, ready to change to a new game
   Future<void> finishGame() async {
-    //cette partie de la fonction a accès au variable du jeu (score par exemple)
+    // here we have access to the score
     // int scoreActuel = _state.gameData.score;
   }
 
 
 
-  /// ACTION : Envoi du score à Supabase
+  /// ACTION : Send score to supabase
   Future<void> submitScore(int newScore, {bool finishGame = false}) async {
     try {
       Map<String, dynamic> updates = {
@@ -137,14 +140,14 @@ class CaesarGameNotifier extends ChangeNotifier {
     }
   }
 
-  /// Ici on va relier les utilisateurs entre eux et mettre en place les écouteurs pour écouter les changements
+  /// Initialize the game
   void _initializeGame() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return;
 
     var gameMetadata = await _commService.getGameMetadata();
 
-    // Ici on créé la partie si elle existe pas, sinon, on va la rejoindre dcp
+    // we create the party if it doesnt exist for now, if it exist, we join it
     if (gameMetadata == null) {
       await _createInitialGameData();
       _localPlayerId = PlayerId.playerA;
@@ -162,7 +165,7 @@ class CaesarGameNotifier extends ChangeNotifier {
       }
     }
 
-    // Mise à jour initiale de currentState à partir des métadonnées (évite blocage si 2 joueurs déjà en DB)
+    // Update the initial currentState from metadata
     final playerBFromMeta = gameMetadata?['player_b_id'] as String?;
     _state = _state.copyWith(
       localPlayerId: _localPlayerId,
@@ -172,7 +175,7 @@ class CaesarGameNotifier extends ChangeNotifier {
     );
     notifyListeners();
 
-    // on met en place l'écouteur qui met à jour les données en direct
+    //we put a  listener that update the data to change the data dynamically (especially the gameState)
     _commService.gameStream.listen((row) {
       if (row.isEmpty) return;
 
@@ -212,7 +215,7 @@ class CaesarGameNotifier extends ChangeNotifier {
   }
 }
 
-
+// c'est assez explicite
 String enleverAccents(String texte) {
   const withAccent =    'àâäáãçéèêëîïíôöóõùûüúÿñÀÂÄÁÃÇÉÈÊËÎÏÍÔÖÓÕÙÛÜÚŸÑ';
   const withoutAccent = 'aaaaaceeeeiiioooouuuuynAAAAACEEEEIIIOOOOUUUUYN';
